@@ -1,13 +1,57 @@
 @import "tailwindcss";
 
-@theme {
-  --color-ink: #04080f;
-  --color-panel: #0b1220;
-  --color-line: #1c2940;
-  --color-glow: #7dd3fc;
+/* ── Design tokens ─────────────────────────────────────────── */
+:root {
+  --bg:      #161228;
+  --bg2:     #0C0918;
+  --surface:  rgba(255,255,255,0.055);
+  --surface2: rgba(255,255,255,0.09);
+  --border:   rgba(255,255,255,0.10);
+  --text:    #F4F1FF;
+  --muted:   #A39EC2;
+  --faint:   #6E6890;
+  --accent:  #7C5CFF;
+  --accent2: #B14DFF;
+  --red:     #FF4D6D;
+  --green:   #3CE0A0;
+  --accent-glow: color-mix(in srgb, var(--accent) 50%, transparent);
+  --display-font: 'Fredoka', sans-serif;
 }
 
+/* ── Base ──────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+
 body {
-  background: var(--color-ink);
-  color: #e2e8f0;
+  font-family: 'Nunito', sans-serif;
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+  background:
+    radial-gradient(900px 500px at 50% -5%, color-mix(in srgb, var(--accent) 16%, transparent), transparent 60%),
+    radial-gradient(700px 500px at 90% 100%, rgba(255,92,168,0.10), transparent 55%),
+    #08060F;
 }
+
+/* ── Input resets ──────────────────────────────────────────── */
+input {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  outline: none;
+  transition: border-color .15s;
+}
+input::placeholder { color: var(--faint); }
+input:focus { border-color: var(--accent); }
+
+/* ── Utilities ─────────────────────────────────────────────── */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { scrollbar-width: none; }
+
+@keyframes floaty {
+  0%, 100% { transform: translateY(0); }
+  50%       { transform: translateY(-10px); }
+}
+.float   { animation: floaty 3.4s ease-in-out infinite; }
+.float-2 { animation: floaty 3.9s ease-in-out infinite; animation-delay: -1.2s; }
+@media (prefers-reduced-motion: reduce) { .float, .float-2 { animation: none; } }

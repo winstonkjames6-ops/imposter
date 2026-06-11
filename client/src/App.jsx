@@ -37,7 +37,9 @@ export default function App() {
   if (reconnecting) {
     return (
       <Shell>
-        <p className="text-slate-400 animate-pulse">Rejoining your game…</p>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh' }}>
+          <p style={{ fontFamily: 'Nunito, sans-serif', color: 'var(--muted)', fontSize: 16 }}>Rejoining your game…</p>
+        </div>
       </Shell>
     );
   }
@@ -57,8 +59,10 @@ export default function App() {
 
 function Shell({ children }) {
   return (
-    <main className="min-h-screen flex items-center justify-center p-6">
-      <div className="w-full max-w-md">{children}</div>
-    </main>
+    <div style={{ display: 'flex', justifyContent: 'center', minHeight: '100vh' }}>
+      <div style={{ width: '100%', maxWidth: 440 }}>
+        {children}
+      </div>
+    </div>
   );
 }

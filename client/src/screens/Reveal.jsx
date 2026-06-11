@@ -1,12 +1,12 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { socket } from "../socket.js";
+import { Btn, Chip, TopBar } from "./ui.jsx";
 
-// Tap-to-reveal so nobody shoulder-surfs your role.
-// The server filtered view.role for this player — the imposter's browser
-// never received the word, so there is nothing here to leak.
 export default function Reveal({ view }) {
-  const [shown, setShown] = useState(false);
+  const [held, setHeld] = useState(false);
+  const [prog, setProg] = useState(0);
   const [error, setError] = useState(null);
+  const timerRef = useRef(null);
   const { role } = view;
 
   function advance() {
@@ -15,39 +15,150 @@ export default function Reveal({ view }) {
     });
   }
 
+  const startHold = () => {
+    if (held) return;
+    const t0 = Date.now();
+    timerRef.current = setInterval(() => {
+      const p = Math.min(1, (Date.now() - t0) / 750);
+      setProg(p);
+      if (p >= 1) { clearInterval(timerRef.current); setHeld(true); }
+    }, 16);
+  };
+
+  const stopHold = () => {
+    if (!held) { clearInterval(timerRef.current); setProg(0); }
+  };
+
+  useEffect(() => () => clearInterval(timerRef.current), []);
+
+  const accent = role.isImposter ? 'var(--red)' : 'var(--green)';
+  const circum = 2 * Math.PI * 28;
+
   return (
-    <div className="space-y-6 text-center">
-      <p className="text-slate-400 text-sm">Category</p>
-      <p className="text-2xl font-semibold">{role.category}</p>
+    <div style={{
+      display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
+      minHeight: '100vh', padding: '56px 22px 40px',
+    }}>
+      <TopBar
+        title="Your secret"
+        right={<Chip tone="accent">{role.category}</Chip>}
+      />
 
-      <button
-        onClick={() => setShown(s => !s)}
-        className="w-full bg-panel border border-line rounded-2xl py-16 hover:border-glow transition-colors"
-      >
-        {!shown ? (
-          <span className="text-slate-400">Tap to reveal your card</span>
-        ) : role.isImposter ? (
-          <span className="text-red-400 text-3xl font-bold">You're the imposter</span>
-        ) : (
-          <span className="text-glow text-3xl font-bold">{role.word}</span>
-        )}
-      </button>
-
-      {view.you.isHost ? (
-        <div className="space-y-2">
-          <button
-            onClick={advance}
-            className="w-full bg-glow text-ink font-semibold rounded-lg py-3"
-          >
-            Everyone's seen it — start clues
-          </button>
-          {error && <p className="text-red-400 text-sm">{error}</p>}
+      {/* Reveal card */}
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 22 }}>
+        <div
+          onMouseDown={startHold}
+          onTouchStart={e => { e.preventDefault(); startHold(); }}
+          onMouseUp={stopHold}
+          onMouseLeave={stopHold}
+          onTouchEnd={stopHold}
+          style={{
+            width: 260, height: 320, borderRadius: 30, position: 'relative',
+            cursor: held ? 'default' : 'pointer',
+            userSelect: 'none', WebkitUserSelect: 'none',
+            WebkitTapHighlightColor: 'transparent',
+            background: held
+              ? `linear-gradient(160deg, color-mix(in srgb, ${accent} 20%, var(--surface)), var(--surface))`
+              : 'linear-gradient(160deg, #2A2342, #1C1730)',
+            border: held ? `2px solid ${accent}` : '2px solid var(--border)',
+            boxShadow: held ? `0 24px 60px -22px ${accent}` : '0 20px 50px -24px #000',
+            display: 'flex', flexDirection: 'column', alignItems: 'center',
+            justifyContent: 'center', textAlign: 'center', padding: 24,
+            transition: 'background .3s, border-color .3s, box-shadow .3s',
+          }}
+        >
+          {held ? (
+            role.isImposter ? (
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
+                <div style={{ fontSize: 52, lineHeight: 1 }}>🎭</div>
+                <div style={{
+                  fontFamily: 'var(--display-font)', fontWeight: 700,
+                  fontSize: 26, lineHeight: 1.2, color: 'var(--red)',
+                }}>
+                  You're the<br />Imposter
+                </div>
+                <div style={{
+                  fontFamily: 'Nunito, sans-serif', fontWeight: 600,
+                  fontSize: 14, color: 'var(--muted)', lineHeight: 1.4, marginTop: 4,
+                }}>
+                  You don't know the word.<br />Blend in. Bluff your clues.
+                </div>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
+                <div style={{
+                  fontFamily: 'Nunito, sans-serif', fontWeight: 800,
+                  fontSize: 12.5, letterSpacing: 1.5, color: 'var(--green)',
+                }}>
+                  THE SECRET WORD IS
+                </div>
+                <div style={{
+                  fontFamily: 'var(--display-font)', fontWeight: 700,
+                  fontSize: 46, color: 'var(--text)', lineHeight: 1,
+                }}>
+                  {role.word}
+                </div>
+                <Chip tone="green">{role.category}</Chip>
+                <div style={{
+                  fontFamily: 'Nunito, sans-serif', fontWeight: 600,
+                  fontSize: 14, color: 'var(--muted)',
+                }}>
+                  Don't say it out loud 🤫
+                </div>
+              </div>
+            )
+          ) : (
+            <>
+              <svg width="64" height="64" viewBox="0 0 64 64" style={{ marginBottom: 14 }}>
+                <circle cx="32" cy="32" r="28" stroke="var(--border)" strokeWidth="4" fill="none" />
+                <circle
+                  cx="32" cy="32" r="28"
+                  stroke="var(--accent)" strokeWidth="4" fill="none"
+                  strokeLinecap="round"
+                  strokeDasharray={circum}
+                  strokeDashoffset={(1 - prog) * circum}
+                  transform="rotate(-90 32 32)"
+                  style={{ transition: 'stroke-dashoffset .05s linear' }}
+                />
+                <path d="M32 22v14M26 30l6 6 6-6" stroke="var(--text)" strokeWidth="3"
+                  fill="none" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+              <div style={{
+                fontFamily: 'var(--display-font)', fontWeight: 600,
+                fontSize: 22, color: 'var(--text)',
+              }}>
+                Hold to reveal
+              </div>
+              <div style={{
+                fontFamily: 'Nunito, sans-serif', fontWeight: 600,
+                fontSize: 14, color: 'var(--faint)', marginTop: 8,
+              }}>
+                Make sure nobody's peeking
+              </div>
+            </>
+          )}
         </div>
-      ) : (
-        <p className="text-slate-500 text-sm animate-pulse">
-          Waiting for the host to start clues…
-        </p>
-      )}
+      </div>
+
+      {/* Footer action */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+        {view.you.isHost ? (
+          <>
+            <Btn variant={held ? 'primary' : 'ghost'} disabled={!held} onClick={advance}>
+              {held ? "Everyone's seen it — start clues" : 'Reveal your card first'}
+            </Btn>
+            {error && (
+              <p style={{ fontFamily: 'Nunito, sans-serif', fontWeight: 700, fontSize: 13, color: 'var(--red)', textAlign: 'center' }}>
+                {error}
+              </p>
+            )}
+          </>
+        ) : (
+          <Btn variant={held ? 'ghost' : 'ghost'} disabled style={{ pointerEvents: 'none' }}>
+            {held ? 'Waiting for host to start clues…' : 'Reveal your card first'}
+          </Btn>
+        )}
+      </div>
     </div>
   );
 }

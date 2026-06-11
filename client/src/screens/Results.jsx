@@ -1,3 +1,6 @@
+import { socket } from "../socket.js";
+import { TopBar, Chip, PlayerBadge, Btn } from "./ui.jsx";
+
 export default function Results({ view }) {
   const { clueData, voteResults, imposterId, role } = view;
 
@@ -7,60 +10,135 @@ export default function Results({ view }) {
 
   const topVoted = sortedVotes[0];
   const caughtRight = topVoted?.id === imposterId;
-  const imposterName = voteResults?.find(p => p.id === imposterId)?.name ?? "Unknown";
+  const imposterName = voteResults?.find(p => p.id === imposterId)?.name ?? 'Unknown';
 
   return (
-    <div className="space-y-6">
-      <header className="text-center space-y-1">
-        <p className="text-slate-400 text-sm">Results</p>
-        <p className={`text-2xl font-bold ${caughtRight ? "text-emerald-400" : "text-red-400"}`}>
-          {caughtRight ? "Imposter caught!" : "Imposter got away!"}
-        </p>
-      </header>
+    <div style={{
+      display: 'flex', flexDirection: 'column', height: '100vh',
+      padding: '56px 22px 34px',
+    }}>
+      <div style={{ textAlign: 'center', marginBottom: 16 }}>
+        <div style={{
+          fontFamily: 'Nunito, sans-serif', fontWeight: 800, fontSize: 12.5,
+          letterSpacing: 2, color: 'var(--faint)',
+        }}>
+          RESULTS
+        </div>
+        <h2 style={{
+          fontFamily: 'var(--display-font)', fontWeight: 700, fontSize: 40,
+          letterSpacing: -0.5, textTransform: 'uppercase', lineHeight: 0.95,
+          color: caughtRight ? 'var(--green)' : 'var(--red)',
+          margin: '4px 0 0',
+        }}>
+          {caughtRight ? 'Imposter caught!' : 'Imposter got away!'}
+        </h2>
+      </div>
 
-      {/* Reveal card */}
-      <div className="bg-panel border border-line rounded-2xl py-6 px-4 text-center space-y-3">
-        <p className="text-slate-400 text-sm">The imposter was</p>
-        <p className="text-3xl font-bold text-red-400">{imposterName}</p>
-        <div className="border-t border-line pt-3 space-y-1">
-          <p className="text-slate-400 text-sm">The secret word</p>
-          <p className="text-2xl font-semibold text-glow">{role?.word}</p>
-          <p className="text-slate-500 text-xs">{role?.category}</p>
+      {/* Imposter reveal card */}
+      <div style={{
+        textAlign: 'center',
+        background: 'linear-gradient(160deg, rgba(255,77,109,0.12), var(--surface))',
+        border: '1px solid rgba(255,77,109,0.28)',
+        borderRadius: 24, padding: '20px 16px 22px', marginBottom: 16,
+      }}>
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 6 }}>
+          <PlayerBadge name={imposterName} size={80} />
+        </div>
+        <div style={{
+          fontFamily: 'Nunito, sans-serif', fontWeight: 700, fontSize: 12.5,
+          letterSpacing: 1, color: 'var(--faint)',
+        }}>
+          THE IMPOSTER WAS
+        </div>
+        <div style={{
+          fontFamily: 'var(--display-font)', fontWeight: 700,
+          fontSize: 30, color: 'var(--red)',
+        }}>
+          {imposterName}
+        </div>
+        <div style={{ height: 1, background: 'var(--border)', margin: '14px 30px' }} />
+        <div style={{
+          fontFamily: 'Nunito, sans-serif', fontWeight: 700, fontSize: 12.5,
+          letterSpacing: 1, color: 'var(--faint)',
+        }}>
+          THE SECRET WORD
+        </div>
+        <div style={{
+          fontFamily: 'var(--display-font)', fontWeight: 700, fontSize: 26, color: 'var(--text)',
+        }}>
+          {role?.word}{' '}
+          <span style={{ color: 'var(--faint)', fontSize: 16, fontWeight: 500 }}>
+            · {role?.category}
+          </span>
         </div>
       </div>
 
       {/* Vote tallies + clues */}
-      <ul className="space-y-2">
+      <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 16 }} className="no-scrollbar">
         {sortedVotes.map(p => {
           const clue = clueData?.find(c => c.id === p.id)?.clue;
           const isImposter = p.id === imposterId;
           return (
-            <li
-              key={p.id}
-              className={`bg-panel border rounded-lg px-4 py-3 space-y-1 ${
-                isImposter ? "border-red-400/40" : "border-line"
-              }`}
-            >
-              <div className="flex items-center justify-between gap-2">
-                <span className="font-medium truncate">
+            <div key={p.id} style={{
+              display: 'flex', alignItems: 'center', gap: 13,
+              background: isImposter ? 'rgba(255,77,109,0.1)' : 'var(--surface)',
+              border: `1px solid ${isImposter ? 'rgba(255,77,109,0.3)' : 'var(--border)'}`,
+              borderRadius: 16, padding: '10px 14px',
+            }}>
+              <PlayerBadge name={p.name} size={42} />
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{
+                  fontFamily: 'var(--display-font)', fontWeight: 600,
+                  fontSize: 16, color: 'var(--text)',
+                }}>
                   {p.name}
                   {isImposter && (
-                    <span className="text-red-400 text-xs ml-2">IMPOSTER</span>
+                    <span style={{
+                      color: 'var(--red)', fontSize: 11, fontWeight: 700,
+                      marginLeft: 7, letterSpacing: 1,
+                    }}>
+                      IMPOSTER
+                    </span>
                   )}
-                </span>
-                <span className="shrink-0 text-glow text-sm font-semibold">
-                  {p.votes} vote{p.votes !== 1 ? "s" : ""}
-                </span>
+                </div>
+                {clue ? (
+                  <div style={{
+                    fontFamily: 'Nunito, sans-serif', fontWeight: 700,
+                    fontSize: 12.5, color: 'var(--faint)',
+                    overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                  }}>
+                    {clue}
+                  </div>
+                ) : (
+                  <div style={{
+                    fontFamily: 'Nunito, sans-serif', fontWeight: 700,
+                    fontSize: 12.5, color: 'var(--faint)', fontStyle: 'italic',
+                  }}>
+                    no clue
+                  </div>
+                )}
               </div>
-              {clue ? (
-                <p className="text-slate-400 text-sm">{clue}</p>
-              ) : (
-                <p className="text-slate-600 text-sm italic">no clue</p>
-              )}
-            </li>
+              <Chip tone={p.votes > 0 ? 'accent' : 'default'}>
+                {p.votes} {p.votes === 1 ? 'vote' : 'votes'}
+              </Chip>
+            </div>
           );
         })}
-      </ul>
+      </div>
+      <div style={{ paddingTop: 4 }}>
+        {view.you.isHost ? (
+          <Btn onClick={() => socket.emit("game:reset")}>
+            Play again
+          </Btn>
+        ) : (
+          <p style={{
+            fontFamily: 'Nunito, sans-serif', fontWeight: 700, fontSize: 14,
+            color: 'var(--faint)', textAlign: 'center', margin: 0,
+          }}>
+            Waiting for host to restart…
+          </p>
+        )}
+      </div>
     </div>
   );
 }

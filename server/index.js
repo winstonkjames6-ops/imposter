@@ -292,6 +292,21 @@ io.on("connection", (socket) => {
     broadcastViews(room);
   });
 
+  // ---- Host resets the game back to lobby ----
+  socket.on("game:reset", (_, callback) => {
+    const { room, player } = locate(socket);
+    if (!room) return callback?.({ ok: false, error: "Not in a room." });
+    if (player.token !== room.hostToken)
+      return callback?.({ ok: false, error: "Only the host can restart." });
+
+    room.clues = {};
+    room.votes = {};
+    room.secret = null;
+    room.phase = "lobby";
+    callback?.({ ok: true });
+    broadcastViews(room);
+  });
+
   // ---- Disconnects ----
   socket.on("disconnect", () => {
     const { room, player } = locate(socket);
