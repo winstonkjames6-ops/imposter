@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { socket } from "../socket.js";
-import { Btn, TopBar, PlayerBadge, GameMenu, MenuTrigger } from "./ui.jsx";
+import { Btn, TopBar, PlayerBadge, MenuOverlay, MenuTrigger } from "./ui.jsx";
 
 export default function Voting({ view, onLeave }) {
   const [localVote, setLocalVote] = useState(null);
@@ -25,7 +25,7 @@ export default function Voting({ view, onLeave }) {
       padding: '56px 22px 34px',
     }}>
       <TopBar title="Voting phase" right={<MenuTrigger onClick={() => setMenuOpen(true)} />} />
-      {menuOpen && <GameMenu view={view} onLeave={onLeave} onClose={() => setMenuOpen(false)} />}
+      <MenuOverlay isOpen={menuOpen} onClose={() => setMenuOpen(false)} isHost={view.you.isHost} onRestart={() => socket.emit('game:reset')} onLeave={onLeave} players={view.players} myId={view.you.id} />
 
       <div style={{ textAlign: 'center', marginBottom: 18 }}>
         <h2 style={{

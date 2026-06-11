@@ -249,68 +249,58 @@ export function MenuTrigger({ onClick }) {
   );
 }
 
-// ── GameMenu bottom sheet ──────────────────────────────────
-export function GameMenu({ view, onLeave, onClose }) {
+// ── MenuOverlay bottom sheet ───────────────────────────────
+export function MenuOverlay({ isOpen, onClose, isHost, onRestart, onLeave, players = [], myId }) {
   const [sub, setSub] = useState(null); // null | 'rules' | 'kick'
-  const [toast, setToast] = useState(null);
-  const others = view.players.filter(p => p.id !== view.you.id);
 
   useEffect(() => {
-    if (!toast) return;
-    const t = setTimeout(() => setToast(null), 2500);
-    return () => clearTimeout(t);
-  }, [toast]);
+    if (!isOpen) setSub(null);
+  }, [isOpen]);
+
+  if (!isOpen) return null;
 
   if (sub === 'rules') return <HowToPlay onClose={() => setSub(null)} />;
 
-  const itemStyle = {
+  const others = players.filter(p => p.id !== myId);
+
+  const btn = {
     display: 'flex', alignItems: 'center', gap: 14,
-    padding: '15px 6px', width: '100%',
-    background: 'none', border: 'none', textAlign: 'left',
-    borderRadius: 14, WebkitTapHighlightColor: 'transparent',
-    fontFamily: 'var(--display-font)', fontWeight: 600, fontSize: 17,
+    width: '100%', minHeight: 56, padding: '0 22px',
+    background: 'none', border: 'none',
+    borderBottom: '1px solid var(--border)',
+    textAlign: 'left', cursor: 'pointer',
+    fontFamily: 'var(--display-font)', fontWeight: 600, fontSize: 18,
+    WebkitTapHighlightColor: 'transparent',
   };
 
   return (
     <>
-      <div onClick={onClose} style={{ position: 'fixed', inset: 0, zIndex: 200, background: 'rgba(0,0,0,0.55)' }} />
+      <div
+        onClick={onClose}
+        style={{ position: 'fixed', inset: 0, zIndex: 50, background: 'rgba(0,0,0,0.65)' }}
+      />
       <div style={{
-        position: 'fixed', bottom: 0, left: '50%', transform: 'translateX(-50%)',
-        width: '100%', maxWidth: 440, zIndex: 201,
-        background: 'var(--surface)',
-        borderTop: '1px solid var(--border)',
-        borderRadius: '26px 26px 0 0',
-        padding: '10px 18px 36px',
+        position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 51,
+        background: '#13102b',
+        borderRadius: '20px 20px 0 0',
+        padding: '12px 0 40px',
       }}>
-        <div style={{ width: 36, height: 4, borderRadius: 99, background: 'var(--border)', margin: '0 auto 16px' }} />
+        <div style={{ width: 40, height: 4, borderRadius: 99, background: 'var(--border)', margin: '0 auto 8px' }} />
 
         {sub === 'kick' ? (
           <>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
-              <button
-                onClick={() => setSub(null)}
-                style={{
-                  background: 'none', border: 'none', cursor: 'pointer',
-                  fontFamily: 'Nunito, sans-serif', fontWeight: 700, fontSize: 14,
-                  color: 'var(--accent2)', padding: '4px 0',
-                  WebkitTapHighlightColor: 'transparent',
-                }}
-              >
-                ← Back
-              </button>
-              <span style={{ fontFamily: 'var(--display-font)', fontWeight: 600, fontSize: 17, color: 'var(--text)' }}>
-                Vote kick
-              </span>
-            </div>
+            <button onClick={() => setSub(null)} style={{ ...btn, color: 'var(--accent2)' }}>
+              ← Back
+            </button>
             {others.length === 0 ? (
-              <p style={{ fontFamily: 'Nunito, sans-serif', fontWeight: 600, fontSize: 14, color: 'var(--faint)', textAlign: 'center', padding: '16px 0' }}>
+              <p style={{ margin: 0, padding: '16px 22px', fontFamily: 'Nunito, sans-serif', fontSize: 14, color: 'var(--faint)' }}>
                 No other players
               </p>
-            ) : others.map(p => (
+            ) : others.map((p, i) => (
               <button
                 key={p.id}
-                onClick={() => { socket.emit('vote:kick', { targetId: p.id }); setToast('Vote kick — coming soon!'); setSub(null); }}
-                style={{ ...itemStyle, cursor: 'pointer', color: 'var(--text)' }}
+                onClick={() => { socket.emit('vote:kick', { targetId: p.id }); onClose(); }}
+                style={{ ...btn, color: 'var(--text)', borderBottom: i === others.length - 1 ? 'none' : '1px solid var(--border)' }}
               >
                 <PlayerBadge name={p.name} size={36} />
                 {p.name}
@@ -319,48 +309,27 @@ export function GameMenu({ view, onLeave, onClose }) {
           </>
         ) : (
           <>
-            <button onClick={() => setSub('rules')} style={{ ...itemStyle, cursor: 'pointer', color: 'var(--text)' }}>
+            <button onClick={() => setSub('rules')} style={{ ...btn, color: 'var(--text)' }}>
               How to play
             </button>
-            <div style={{ height: 1, background: 'var(--border)', margin: '4px 0' }} />
             <button
-              onClick={view.you.isHost ? () => { socket.emit('game:reset'); onClose(); } : undefined}
-              style={{
-                ...itemStyle,
-                cursor: view.you.isHost ? 'pointer' : 'default',
-                color: view.you.isHost ? 'var(--text)' : 'var(--faint)',
-                opacity: view.you.isHost ? 1 : 0.4,
-              }}
+              onClick={isHost ? () => { onRestart(); onClose(); } : undefined}
+              style={{ ...btn, color: isHost ? 'var(--text)' : 'var(--faint)', cursor: isHost ? 'pointer' : 'default', opacity: isHost ? 1 : 0.45 }}
             >
-              {view.you.isHost ? 'Restart game' : 'Restart game — host only'}
+              {isHost ? 'Restart game' : 'Restart game — host only'}
             </button>
-            <button onClick={() => setSub('kick')} style={{ ...itemStyle, cursor: 'pointer', color: 'var(--text)' }}>
+            <button onClick={() => setSub('kick')} style={{ ...btn, color: 'var(--text)' }}>
               Vote kick
             </button>
-            <div style={{ height: 1, background: 'var(--border)', margin: '4px 0' }} />
             <button
               onClick={() => { socket.emit('room:leave'); clearSeat(); onLeave(); }}
-              style={{ ...itemStyle, cursor: 'pointer', color: 'var(--red)' }}
+              style={{ ...btn, color: 'var(--red)', borderBottom: 'none' }}
             >
               Leave game
             </button>
           </>
         )}
       </div>
-
-      {toast && (
-        <div style={{
-          position: 'fixed', bottom: 80, left: '50%', transform: 'translateX(-50%)',
-          zIndex: 300,
-          background: 'var(--surface2)', border: '1px solid var(--border)',
-          borderRadius: 99, padding: '11px 22px',
-          fontFamily: 'Nunito, sans-serif', fontWeight: 700, fontSize: 14,
-          color: 'var(--text)', whiteSpace: 'nowrap',
-          boxShadow: '0 8px 24px -8px rgba(0,0,0,0.4)',
-        }}>
-          {toast}
-        </div>
-      )}
     </>
   );
 }

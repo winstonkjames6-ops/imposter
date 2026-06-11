@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { socket } from "../socket.js";
-import { Btn, Chip, TopBar, PlayerBadge, GameMenu, MenuTrigger } from "./ui.jsx";
+import { Btn, Chip, TopBar, PlayerBadge, MenuOverlay, MenuTrigger } from "./ui.jsx";
 
 export default function Clues({ view, onLeave }) {
   const [text, setText] = useState("");
@@ -30,7 +30,7 @@ export default function Clues({ view, onLeave }) {
           </div>
         }
       />
-      {menuOpen && <GameMenu view={view} onLeave={onLeave} onClose={() => setMenuOpen(false)} />}
+      <MenuOverlay isOpen={menuOpen} onClose={() => setMenuOpen(false)} isHost={view.you.isHost} onRestart={() => socket.emit('game:reset')} onLeave={onLeave} players={view.players} myId={view.you.id} />
 
       {/* Role reminder */}
       <div style={{

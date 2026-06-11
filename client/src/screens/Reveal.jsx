@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { socket } from "../socket.js";
-import { Btn, Chip, TopBar, GameMenu, MenuTrigger } from "./ui.jsx";
+import { Btn, Chip, TopBar, MenuOverlay, MenuTrigger } from "./ui.jsx";
 
 export default function Reveal({ view, onLeave }) {
   const [held, setHeld] = useState(false);
@@ -49,7 +49,7 @@ export default function Reveal({ view, onLeave }) {
           </div>
         }
       />
-      {menuOpen && <GameMenu view={view} onLeave={onLeave} onClose={() => setMenuOpen(false)} />}
+      <MenuOverlay isOpen={menuOpen} onClose={() => setMenuOpen(false)} isHost={view.you.isHost} onRestart={() => socket.emit('game:reset')} onLeave={onLeave} players={view.players} myId={view.you.id} />
 
       {/* Reveal card */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 22 }}>
