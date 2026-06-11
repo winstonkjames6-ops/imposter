@@ -53,18 +53,12 @@ input:focus { border-color: var(--accent); }
 
 .phone-shell {
   width: 100%;
+  min-width: 320px;
+  max-width: 600px;
   min-height: 100dvh;
   position: relative;
-}
-
-@media (min-width: 768px) {
-  .phone-shell {
-    max-width: 430px;
-    /* Creates a containing block for position:fixed descendants so overlays
-       and bottom sheets stay within the phone container, not the viewport. */
-    transform: translateZ(0);
-    box-shadow: 0 0 0 1px var(--border), 0 40px 120px -20px rgba(0,0,0,0.7);
-  }
+  /* Containing block for position:fixed descendants (bottom sheet, overlays). */
+  transform: translateZ(0);
 }
 
 /* ── Utilities ─────────────────────────────────────────────── */
