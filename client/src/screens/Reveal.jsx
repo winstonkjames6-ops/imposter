@@ -1,11 +1,12 @@
 import { useState, useRef, useEffect } from "react";
 import { socket } from "../socket.js";
-import { Btn, Chip, TopBar } from "./ui.jsx";
+import { Btn, Chip, TopBar, GameMenu, MenuTrigger } from "./ui.jsx";
 
-export default function Reveal({ view }) {
+export default function Reveal({ view, onLeave }) {
   const [held, setHeld] = useState(false);
   const [prog, setProg] = useState(0);
   const [error, setError] = useState(null);
+  const [menuOpen, setMenuOpen] = useState(false);
   const timerRef = useRef(null);
   const { role } = view;
 
@@ -41,8 +42,14 @@ export default function Reveal({ view }) {
     }}>
       <TopBar
         title="Your secret"
-        right={<Chip tone="accent">{role.category}</Chip>}
+        right={
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            <Chip tone="accent">{role.category}</Chip>
+            <MenuTrigger onClick={() => setMenuOpen(true)} />
+          </div>
+        }
       />
+      {menuOpen && <GameMenu view={view} onLeave={onLeave} onClose={() => setMenuOpen(false)} />}
 
       {/* Reveal card */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 22 }}>

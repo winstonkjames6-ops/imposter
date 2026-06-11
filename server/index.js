@@ -292,6 +292,29 @@ io.on("connection", (socket) => {
     broadcastViews(room);
   });
 
+  // ---- Player leaves the room voluntarily ----
+  socket.on("room:leave", () => {
+    const { room, player } = locate(socket);
+    if (!room || !player) return;
+
+    room.players.delete(player.token);
+    socket.data = {};
+
+    if (player.token === room.hostToken) {
+      const nextHost = [...room.players.values()].find(p => p.connected);
+      room.hostToken = nextHost?.token ?? null;
+    }
+
+    const anyConnected = [...room.players.values()].some(p => p.connected);
+    if (!anyConnected) {
+      room._cleanupTimer = setTimeout(() => {
+        rooms.delete(room.code);
+      }, 10 * 60 * 1000);
+    }
+
+    broadcastViews(room);
+  });
+
   // ---- Host skips remaining clue submissions ----
   socket.on("clue:skip", (_, callback) => {
     const { room, player } = locate(socket);

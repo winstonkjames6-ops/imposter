@@ -1,9 +1,10 @@
 import { useState } from "react";
 import { socket } from "../socket.js";
-import { Btn, Chip, TopBar, PlayerBadge } from "./ui.jsx";
+import { Btn, Chip, TopBar, PlayerBadge, GameMenu, MenuTrigger } from "./ui.jsx";
 
-export default function Lobby({ view }) {
+export default function Lobby({ view, onLeave }) {
   const [error, setError] = useState(null);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   function start() {
     socket.emit("game:start", {}, (res) => {
@@ -25,8 +26,14 @@ export default function Lobby({ view }) {
     }}>
       <TopBar
         title="Game lobby"
-        right={<Chip tone="green">● Live</Chip>}
+        right={
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            <Chip tone="green">● Live</Chip>
+            <MenuTrigger onClick={() => setMenuOpen(true)} />
+          </div>
+        }
       />
+      {menuOpen && <GameMenu view={view} onLeave={onLeave} onClose={() => setMenuOpen(false)} />}
 
       {/* Room code */}
       <button

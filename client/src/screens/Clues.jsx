@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { socket } from "../socket.js";
-import { Btn, Chip, TopBar, PlayerBadge } from "./ui.jsx";
+import { Btn, Chip, TopBar, PlayerBadge, GameMenu, MenuTrigger } from "./ui.jsx";
 
-export default function Clues({ view }) {
+export default function Clues({ view, onLeave }) {
   const [text, setText] = useState("");
   const [error, setError] = useState(null);
+  const [menuOpen, setMenuOpen] = useState(false);
   const { clueData, role, players } = view;
 
   function submit(e) {
@@ -22,8 +23,14 @@ export default function Clues({ view }) {
     }}>
       <TopBar
         title="Clue phase"
-        right={<Chip tone="accent">{role?.category}</Chip>}
+        right={
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            <Chip tone="accent">{role?.category}</Chip>
+            <MenuTrigger onClick={() => setMenuOpen(true)} />
+          </div>
+        }
       />
+      {menuOpen && <GameMenu view={view} onLeave={onLeave} onClose={() => setMenuOpen(false)} />}
 
       {/* Role reminder */}
       <div style={{

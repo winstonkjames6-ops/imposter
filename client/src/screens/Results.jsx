@@ -1,7 +1,9 @@
+import { useState } from "react";
 import { socket } from "../socket.js";
-import { TopBar, Chip, PlayerBadge, Btn } from "./ui.jsx";
+import { TopBar, Chip, PlayerBadge, Btn, GameMenu, MenuTrigger } from "./ui.jsx";
 
-export default function Results({ view }) {
+export default function Results({ view, onLeave }) {
+  const [menuOpen, setMenuOpen] = useState(false);
   const { clueData, voteResults, imposterId, role } = view;
 
   const sortedVotes = voteResults
@@ -14,9 +16,13 @@ export default function Results({ view }) {
 
   return (
     <div style={{
-      display: 'flex', flexDirection: 'column', height: '100vh',
+      position: 'relative', display: 'flex', flexDirection: 'column', height: '100vh',
       padding: '56px 22px 34px',
     }}>
+      <div style={{ position: 'absolute', top: 14, right: 22 }}>
+        <MenuTrigger onClick={() => setMenuOpen(true)} />
+      </div>
+      {menuOpen && <GameMenu view={view} onLeave={onLeave} onClose={() => setMenuOpen(false)} />}
       <div style={{ textAlign: 'center', marginBottom: 16 }}>
         <div style={{
           fontFamily: 'Nunito, sans-serif', fontWeight: 800, fontSize: 12.5,

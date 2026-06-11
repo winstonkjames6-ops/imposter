@@ -1,11 +1,12 @@
 import { useState } from "react";
 import { socket } from "../socket.js";
-import { Btn, TopBar, PlayerBadge } from "./ui.jsx";
+import { Btn, TopBar, PlayerBadge, GameMenu, MenuTrigger } from "./ui.jsx";
 
-export default function Voting({ view }) {
+export default function Voting({ view, onLeave }) {
   const [localVote, setLocalVote] = useState(null);
   const [locked, setLocked] = useState(false);
   const [error, setError] = useState(null);
+  const [menuOpen, setMenuOpen] = useState(false);
   const { clueData, youVoted } = view;
 
   function lockVote() {
@@ -23,7 +24,8 @@ export default function Voting({ view }) {
       display: 'flex', flexDirection: 'column', height: '100vh',
       padding: '56px 22px 34px',
     }}>
-      <TopBar title="Voting phase" />
+      <TopBar title="Voting phase" right={<MenuTrigger onClick={() => setMenuOpen(true)} />} />
+      {menuOpen && <GameMenu view={view} onLeave={onLeave} onClose={() => setMenuOpen(false)} />}
 
       <div style={{ textAlign: 'center', marginBottom: 18 }}>
         <h2 style={{

@@ -46,12 +46,14 @@ export default function App() {
 
   if (!view) return <Shell><Home /></Shell>;
 
+  const onLeave = () => setView(null);
+
   const screens = {
-    lobby: <Lobby view={view} />,
-    reveal: <Reveal view={view} />,
-    clues: <Clues view={view} />,
-    voting: <Voting view={view} />,
-    results: <Results view={view} />,
+    lobby: <Lobby view={view} onLeave={onLeave} />,
+    reveal: <Reveal view={view} onLeave={onLeave} />,
+    clues: <Clues view={view} onLeave={onLeave} />,
+    voting: <Voting view={view} onLeave={onLeave} />,
+    results: <Results view={view} onLeave={onLeave} />,
   };
 
   return <Shell>{screens[view.phase] ?? <Home />}</Shell>;
