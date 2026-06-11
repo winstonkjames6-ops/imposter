@@ -2,11 +2,90 @@ import { useState } from "react";
 import { socket, saveSeat } from "../socket.js";
 import { Btn } from "./ui.jsx";
 
+const RULES = [
+  { n: 1, text: "Everyone gets a secret word except the Imposter, who only knows the category." },
+  { n: 2, text: "Each player gives a one-word clue about the word without saying it directly." },
+  { n: 3, text: "After all clues are in, vote for who you think the Imposter is." },
+  { n: 4, text: "If the group catches the Imposter, crew wins. If not, Imposter wins." },
+];
+
+function HowToPlay({ onClose }) {
+  return (
+    <div style={{
+      position: 'fixed', inset: 0, zIndex: 100,
+      background: 'var(--bg)',
+      display: 'flex', flexDirection: 'column',
+      padding: '64px 22px 48px',
+    }}>
+      <button
+        onClick={onClose}
+        style={{
+          position: 'absolute', top: 18, right: 18,
+          width: 44, height: 44, borderRadius: 14,
+          background: 'var(--surface2)', border: '1px solid var(--border)',
+          color: 'var(--text)', cursor: 'pointer',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          WebkitTapHighlightColor: 'transparent',
+        }}
+        aria-label="Close"
+      >
+        <svg width="14" height="14" viewBox="0 0 14 14">
+          <path d="M1 1l12 12M13 1L1 13" stroke="currentColor" strokeWidth="2.2"
+            strokeLinecap="round" />
+        </svg>
+      </button>
+
+      <div style={{ textAlign: 'center', marginBottom: 36 }}>
+        <div style={{
+          fontFamily: 'Nunito, sans-serif', fontWeight: 800, fontSize: 13,
+          letterSpacing: 3, color: 'var(--accent2)', marginBottom: 8, textTransform: 'uppercase',
+        }}>
+          How to play
+        </div>
+        <h2 style={{
+          fontFamily: 'var(--display-font)', fontWeight: 700, fontSize: 42,
+          letterSpacing: -0.5, textTransform: 'uppercase', lineHeight: 0.95,
+          color: 'var(--text)', margin: 0,
+        }}>
+          The rules
+        </h2>
+      </div>
+
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+        {RULES.map(({ n, text }) => (
+          <div key={n} style={{
+            display: 'flex', alignItems: 'flex-start', gap: 16,
+            background: 'var(--surface)', border: '1px solid var(--border)',
+            borderRadius: 20, padding: '16px 18px',
+          }}>
+            <div style={{
+              width: 34, height: 34, borderRadius: 10, flexShrink: 0,
+              background: 'linear-gradient(135deg, var(--accent) 0%, var(--accent2) 100%)',
+              boxShadow: '0 6px 16px -8px var(--accent-glow)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontFamily: 'var(--display-font)', fontWeight: 700, fontSize: 16, color: '#fff',
+            }}>
+              {n}
+            </div>
+            <p style={{
+              fontFamily: 'Nunito, sans-serif', fontWeight: 600, fontSize: 15.5,
+              color: 'var(--muted)', margin: 0, lineHeight: 1.5,
+            }}>
+              {text}
+            </p>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export default function Home() {
   const [name, setName] = useState("");
   const [code, setCode] = useState("");
   const [joining, setJoining] = useState(false);
   const [error, setError] = useState(null);
+  const [showRules, setShowRules] = useState(false);
 
   function create() {
     socket.emit("room:create", { name }, (res) => {
@@ -100,6 +179,10 @@ export default function Home() {
           </div>
         )}
 
+        <Btn variant="ghost" onClick={() => setShowRules(true)}>
+          How to play
+        </Btn>
+
         {error && (
           <p style={{
             fontFamily: 'Nunito, sans-serif', fontWeight: 700, fontSize: 14,
@@ -109,6 +192,7 @@ export default function Home() {
           </p>
         )}
       </div>
+      {showRules && <HowToPlay onClose={() => setShowRules(false)} />}
     </div>
   );
 }
