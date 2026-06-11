@@ -77,14 +77,21 @@ export default function Clues({ view }) {
           )}
         </form>
       ) : (
-        <div style={{
-          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
-          marginBottom: 8, background: 'rgba(60,224,160,0.1)',
-          border: '1px solid rgba(60,224,160,0.3)', borderRadius: 16, padding: 16,
-        }}>
-          <span style={{ fontFamily: 'Nunito, sans-serif', fontWeight: 700, color: 'var(--green)' }}>
-            ✓ Clue submitted
-          </span>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 8 }}>
+          <div style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
+            background: 'rgba(60,224,160,0.1)',
+            border: '1px solid rgba(60,224,160,0.3)', borderRadius: 16, padding: 16,
+          }}>
+            <span style={{ fontFamily: 'Nunito, sans-serif', fontWeight: 700, color: 'var(--green)' }}>
+              ✓ Clue submitted
+            </span>
+          </div>
+          {view.you.isHost && (
+            <Btn variant="secondary" onClick={() => socket.emit("clue:skip")}>
+              Skip waiting players
+            </Btn>
+          )}
         </div>
       )}
 
