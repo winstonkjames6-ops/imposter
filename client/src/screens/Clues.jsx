@@ -36,13 +36,13 @@ export default function Clues({ view }) {
           fontFamily: 'Nunito, sans-serif', fontWeight: 700, fontSize: 12.5,
           letterSpacing: 1, color: 'var(--faint)',
         }}>
-          {role?.isImposter ? 'YOU ARE THE IMPOSTER' : 'YOUR WORD'}
+          {role?.isImposter ? 'YOU ARE THE IMPOSTER' : 'CATEGORY'}
         </div>
         <div style={{
           fontFamily: 'var(--display-font)', fontWeight: 700, fontSize: 32,
           color: role?.isImposter ? 'var(--red)' : 'var(--text)', marginTop: 4,
         }}>
-          {role?.isImposter ? 'Wing it 🎭' : role?.word}
+          {role?.isImposter ? 'Wing it 🎭' : role?.category}
         </div>
         <div style={{
           fontFamily: 'Nunito, sans-serif', fontWeight: 600, fontSize: 13.5,
