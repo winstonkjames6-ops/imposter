@@ -37,7 +37,7 @@ export default function App() {
   if (reconnecting) {
     return (
       <Shell>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100dvh' }}>
           <p style={{ fontFamily: 'Nunito, sans-serif', color: 'var(--muted)', fontSize: 16 }}>Rejoining your game…</p>
         </div>
       </Shell>
@@ -61,8 +61,8 @@ export default function App() {
 
 function Shell({ children }) {
   return (
-    <div style={{ display: 'flex', justifyContent: 'center', minHeight: '100vh' }}>
-      <div style={{ width: '100%', maxWidth: 440 }}>
+    <div className="app-bg">
+      <div className="phone-shell">
         {children}
       </div>
     </div>

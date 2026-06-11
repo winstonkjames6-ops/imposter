@@ -44,6 +44,29 @@ input {
 input::placeholder { color: var(--faint); }
 input:focus { border-color: var(--accent); }
 
+/* ── Shell layout ─────────────────────────────────────────── */
+.app-bg {
+  display: flex;
+  justify-content: center;
+  min-height: 100dvh;
+}
+
+.phone-shell {
+  width: 100%;
+  min-height: 100dvh;
+  position: relative;
+}
+
+@media (min-width: 768px) {
+  .phone-shell {
+    max-width: 430px;
+    /* Creates a containing block for position:fixed descendants so overlays
+       and bottom sheets stay within the phone container, not the viewport. */
+    transform: translateZ(0);
+    box-shadow: 0 0 0 1px var(--border), 0 40px 120px -20px rgba(0,0,0,0.7);
+  }
+}
+
 /* ── Utilities ─────────────────────────────────────────────── */
 .no-scrollbar::-webkit-scrollbar { display: none; }
 .no-scrollbar { scrollbar-width: none; }
