@@ -32,7 +32,8 @@ export default function Reveal({ view, onLeave }) {
 
   useEffect(() => () => clearInterval(timerRef.current), []);
 
-  const accent = role.isImposter ? 'var(--red)' : 'var(--green)';
+  const isSpectator = view.you.isSpectator;
+  const accent = role ? (role.isImposter ? 'var(--red)' : 'var(--green)') : 'var(--accent)';
   const circum = 2 * Math.PI * 28;
 
   return (
@@ -44,16 +45,41 @@ export default function Reveal({ view, onLeave }) {
         title="Your secret"
         right={
           <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-            <Chip tone="accent">{role.category}</Chip>
+            {role && <Chip tone="accent">{role.category}</Chip>}
             <MenuTrigger onClick={() => setMenuOpen(true)} />
           </div>
         }
       />
       <MenuOverlay isOpen={menuOpen} onClose={() => setMenuOpen(false)} isHost={view.you.isHost} onRestart={() => socket.emit('game:reset')} onLeave={onLeave} players={view.players} myId={view.you.id} />
+      {isSpectator && (
+        <div style={{
+          background: 'rgba(124,92,255,0.12)', border: '1px solid rgba(124,92,255,0.3)',
+          borderRadius: 12, padding: '8px 14px', marginBottom: 16,
+          fontFamily: 'Nunito, sans-serif', fontWeight: 700, fontSize: 13.5,
+          color: 'var(--accent2)', textAlign: 'center',
+        }}>
+          You're watching
+        </div>
+      )}
 
       {/* Reveal card */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 22 }}>
-        <div
+        {isSpectator ? (
+          <div style={{
+            width: 260, height: 320, borderRadius: 30,
+            background: 'linear-gradient(160deg, #2A2342, #1C1730)',
+            border: '2px solid var(--border)',
+            display: 'flex', flexDirection: 'column', alignItems: 'center',
+            justifyContent: 'center', textAlign: 'center', padding: 24, gap: 12,
+          }}>
+            <div style={{ fontFamily: 'var(--display-font)', fontWeight: 600, fontSize: 20, color: 'var(--muted)' }}>
+              Players are revealing their cards
+            </div>
+            <div style={{ fontFamily: 'Nunito, sans-serif', fontWeight: 600, fontSize: 14, color: 'var(--faint)' }}>
+              Watching as spectator
+            </div>
+          </div>
+        ) : <div
           onMouseDown={startHold}
           onTouchStart={e => { e.preventDefault(); startHold(); }}
           onMouseUp={stopHold}
@@ -144,28 +170,30 @@ export default function Reveal({ view, onLeave }) {
               </div>
             </>
           )}
-        </div>
+        </div>}
       </div>
 
       {/* Footer action */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-        {view.you.isHost ? (
-          <>
-            <Btn variant={held ? 'primary' : 'ghost'} disabled={!held} onClick={advance}>
-              {held ? "Everyone's seen it — start clues" : 'Reveal your card first'}
+      {!isSpectator && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {view.you.isHost ? (
+            <>
+              <Btn variant={held ? 'primary' : 'ghost'} disabled={!held} onClick={advance}>
+                {held ? "Everyone's seen it — start clues" : 'Reveal your card first'}
+              </Btn>
+              {error && (
+                <p style={{ fontFamily: 'Nunito, sans-serif', fontWeight: 700, fontSize: 13, color: 'var(--red)', textAlign: 'center' }}>
+                  {error}
+                </p>
+              )}
+            </>
+          ) : (
+            <Btn variant="ghost" disabled style={{ pointerEvents: 'none' }}>
+              {held ? 'Waiting for host to start clues…' : 'Reveal your card first'}
             </Btn>
-            {error && (
-              <p style={{ fontFamily: 'Nunito, sans-serif', fontWeight: 700, fontSize: 13, color: 'var(--red)', textAlign: 'center' }}>
-                {error}
-              </p>
-            )}
-          </>
-        ) : (
-          <Btn variant={held ? 'ghost' : 'ghost'} disabled style={{ pointerEvents: 'none' }}>
-            {held ? 'Waiting for host to start clues…' : 'Reveal your card first'}
-          </Btn>
-        )}
-      </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

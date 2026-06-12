@@ -59,20 +59,25 @@ function createRoom() {
 // ------------------------------------------------------------
 
 function buildView(room, player) {
-  const connectedPlayers = [...room.players.values()].filter(p => p.connected);
+  // Active (non-spectator) connected players are the source of truth for
+  // phase-completion checks and counts shown to all clients.
+  const activePlayers = [...room.players.values()].filter(p => !p.spectator);
+  const connectedActive = activePlayers.filter(p => p.connected);
 
   // Clue information shaped per phase.
   // During "clues": progress counter only (don't reveal others' words early).
   // During "voting" / "results": the full named list so players can see and vote.
+  // Spectators are excluded from counts and candidate lists.
   let clueData = null;
   if (room.phase === "clues") {
+    const submittedCount = connectedActive.filter(p => room.clues[p.token]).length;
     clueData = {
-      submitted: Object.keys(room.clues).length,
-      total: connectedPlayers.length,
+      submitted: submittedCount,
+      total: connectedActive.length,
       youSubmitted: !!room.clues[player.token],
     };
   } else if (room.phase === "voting" || room.phase === "results") {
-    clueData = [...room.players.values()].map(p => ({
+    clueData = activePlayers.map(p => ({
       id: p.id,
       name: p.name,
       clue: room.clues[p.token] || null,
@@ -80,13 +85,14 @@ function buildView(room, player) {
   }
 
   // Vote tallies — only materialised in the results phase.
+  // Spectators cannot be voted for, so they never appear here.
   let voteResults = null;
   if (room.phase === "results") {
     const tally = {};
     for (const votedId of Object.values(room.votes)) {
       tally[votedId] = (tally[votedId] || 0) + 1;
     }
-    voteResults = [...room.players.values()].map(p => ({
+    voteResults = activePlayers.map(p => ({
       id: p.id,
       name: p.name,
       votes: tally[p.id] || 0,
@@ -99,20 +105,20 @@ function buildView(room, player) {
     you: {
       name: player.name,
       token: player.token,
-      id: player.id,       // public id, safe for the client to use when voting
+      id: player.id,
       isHost: player.token === room.hostToken,
+      isSpectator: !!player.spectator,
     },
     players: [...room.players.values()].map(p => ({
       id: p.id,
       name: p.name,
       connected: p.connected,
       isHost: p.token === room.hostToken,
+      isSpectator: !!p.spectator,
     })),
-    // Hidden information filtered per player.
-    // During "results" the word is revealed to everyone (including the imposter,
-    // who only now learns what they were bluffing about).
+    // Spectators get no role — they watch but have no secret identity.
     role:
-      room.phase === "lobby" || !room.secret
+      player.spectator || room.phase === "lobby" || !room.secret
         ? null
         : room.phase === "results"
         ? {
@@ -127,15 +133,11 @@ function buildView(room, player) {
     clueData,
     voteResults,
 
-    // The imposter's public id is only revealed here, in the results phase.
-    // Never send it earlier — clients have no reason to know.
     imposterId:
       room.phase === "results"
         ? (room.players.get(room.secret.imposterToken)?.id ?? null)
         : null,
 
-    // Let the player know their voting state so they don't accidentally
-    // double-vote after a page refresh.
     youVoted: room.phase === "voting" ? !!room.votes[player.token] : null,
   };
 }
@@ -155,7 +157,7 @@ function broadcastViews(room) {
 
 function checkClueDone(room) {
   if (room.phase !== "clues") return;
-  const connected = [...room.players.values()].filter(p => p.connected);
+  const connected = [...room.players.values()].filter(p => p.connected && !p.spectator);
   if (connected.length > 0 && connected.every(p => room.clues[p.token])) {
     room.phase = "voting";
   }
@@ -163,7 +165,7 @@ function checkClueDone(room) {
 
 function checkVoteDone(room) {
   if (room.phase !== "voting") return;
-  const connected = [...room.players.values()].filter(p => p.connected);
+  const connected = [...room.players.values()].filter(p => p.connected && !p.spectator);
   if (connected.length > 0 && connected.every(p => room.votes[p.token] !== undefined)) {
     room.phase = "results";
   }
@@ -187,12 +189,11 @@ io.on("connection", (socket) => {
   socket.on("room:join", ({ roomCode, name }, callback) => {
     const room = rooms.get(roomCode?.toUpperCase());
     if (!room) return callback({ ok: false, error: "Room not found." });
-    if (room.phase !== "lobby")
-      return callback({ ok: false, error: "Game already started." });
     if (room.players.size >= 10)
       return callback({ ok: false, error: "Room is full." });
 
-    const player = addPlayer(room, socket, name);
+    const isSpectator = room.phase !== "lobby";
+    const player = addPlayer(room, socket, name, isSpectator);
     callback({ ok: true, roomCode: room.code, token: player.token });
     broadcastViews(room);
   });
@@ -259,6 +260,8 @@ io.on("connection", (socket) => {
   socket.on("clue:submit", ({ text }, callback) => {
     const { room, player } = locate(socket);
     if (!room) return callback?.({ ok: false, error: "Not in a room." });
+    if (player.spectator)
+      return callback?.({ ok: false, error: "Spectators cannot submit clues." });
     if (room.phase !== "clues")
       return callback?.({ ok: false, error: "Not in clues phase." });
     if (room.clues[player.token])
@@ -278,12 +281,14 @@ io.on("connection", (socket) => {
   socket.on("vote:cast", ({ targetId }, callback) => {
     const { room, player } = locate(socket);
     if (!room) return callback?.({ ok: false, error: "Not in a room." });
+    if (player.spectator)
+      return callback?.({ ok: false, error: "Spectators cannot vote." });
     if (room.phase !== "voting")
       return callback?.({ ok: false, error: "Not in voting phase." });
     if (room.votes[player.token] !== undefined)
       return callback?.({ ok: false, error: "Already voted." });
 
-    const target = [...room.players.values()].find(p => p.id === targetId);
+    const target = [...room.players.values()].find(p => p.id === targetId && !p.spectator);
     if (!target) return callback?.({ ok: false, error: "Invalid vote target." });
 
     room.votes[player.token] = targetId;
@@ -325,7 +330,7 @@ io.on("connection", (socket) => {
       return callback?.({ ok: false, error: "Not in clues phase." });
 
     for (const p of room.players.values()) {
-      if (p.connected && !room.clues[p.token]) {
+      if (p.connected && !p.spectator && !room.clues[p.token]) {
         room.clues[p.token] = "";
       }
     }
@@ -384,13 +389,14 @@ io.on("connection", (socket) => {
 // Helpers
 // ------------------------------------------------------------
 
-function addPlayer(room, socket, name) {
+function addPlayer(room, socket, name, spectator = false) {
   const player = {
     token: randomUUID(), // auth identity — never shared with other clients
     id: randomUUID(),    // public identity — safe to expose for voting
     name: (name || "Player").trim().slice(0, 16),
     socketId: socket.id,
     connected: true,
+    spectator,
   };
   room.players.set(player.token, player);
   socket.data = { roomCode: room.code, token: player.token };

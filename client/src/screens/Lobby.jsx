@@ -16,7 +16,9 @@ export default function Lobby({ view, onLeave }) {
     navigator.clipboard?.writeText(view.roomCode).catch(() => {});
   }
 
-  const slots = [...view.players];
+  const activePlayers = view.players.filter(p => !p.isSpectator);
+  const spectators = view.players.filter(p => p.isSpectator);
+  const slots = [...activePlayers];
   while (slots.length < 6) slots.push(null);
 
   return (
@@ -76,7 +78,7 @@ export default function Lobby({ view, onLeave }) {
         fontFamily: 'Nunito, sans-serif', fontWeight: 800, fontSize: 12.5,
         letterSpacing: 1, color: 'var(--faint)', marginBottom: 10,
       }}>
-        PLAYERS · {view.players.length}
+        PLAYERS · {activePlayers.length}
       </div>
 
       {/* Player grid */}
@@ -128,18 +130,56 @@ export default function Lobby({ view, onLeave }) {
         </div>
       </div>
 
+      {/* Spectators */}
+      {spectators.length > 0 && (
+        <>
+          <div style={{
+            fontFamily: 'Nunito, sans-serif', fontWeight: 800, fontSize: 12.5,
+            letterSpacing: 1, color: 'var(--faint)', margin: '16px 0 8px',
+          }}>
+            SPECTATORS · {spectators.length}
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {spectators.map(p => (
+              <div key={p.id} style={{
+                display: 'flex', alignItems: 'center', gap: 12,
+                background: 'var(--surface)', border: '1px solid var(--border)',
+                borderRadius: 16, padding: '10px 14px',
+              }}>
+                <PlayerBadge name={p.name} size={36} />
+                <span style={{
+                  flex: 1, fontFamily: 'var(--display-font)', fontWeight: 600,
+                  fontSize: 15, color: p.connected ? 'var(--muted)' : 'var(--faint)',
+                }}>
+                  {p.name}
+                  {p.name === view.you.name && (
+                    <span style={{ color: 'var(--faint)', fontSize: 13 }}> (you)</span>
+                  )}
+                </span>
+                <span style={{
+                  fontFamily: 'Nunito, sans-serif', fontWeight: 700,
+                  fontSize: 11.5, letterSpacing: 0.5, color: 'var(--faint)',
+                }}>
+                  WATCHING
+                </span>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+
       {/* Footer */}
       <div style={{ paddingTop: 16 }}>
         {view.you.isHost ? (
           <>
             <Btn
               variant="green"
-              disabled={view.players.length < 3}
+              disabled={activePlayers.length < 3}
               onClick={start}
             >
-              Start game · {view.players.length} players
+              Start game · {activePlayers.length} players
             </Btn>
-            {view.players.length < 3 && (
+            {activePlayers.length < 3 && (
               <p style={{
                 fontFamily: 'Nunito, sans-serif', fontWeight: 600, fontSize: 13,
                 color: 'var(--faint)', textAlign: 'center', marginTop: 8,

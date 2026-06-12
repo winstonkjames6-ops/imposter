@@ -23,6 +23,16 @@ export default function Results({ view, onLeave }) {
         <MenuTrigger onClick={() => setMenuOpen(true)} />
       </div>
       <MenuOverlay isOpen={menuOpen} onClose={() => setMenuOpen(false)} isHost={view.you.isHost} onRestart={() => socket.emit('game:reset')} onLeave={onLeave} players={view.players} myId={view.you.id} />
+      {view.you.isSpectator && (
+        <div style={{
+          background: 'rgba(124,92,255,0.12)', border: '1px solid rgba(124,92,255,0.3)',
+          borderRadius: 12, padding: '8px 14px', marginBottom: 16,
+          fontFamily: 'Nunito, sans-serif', fontWeight: 700, fontSize: 13.5,
+          color: 'var(--accent2)', textAlign: 'center',
+        }}>
+          You're watching
+        </div>
+      )}
       <div style={{ textAlign: 'center', marginBottom: 16 }}>
         <div style={{
           fontFamily: 'Nunito, sans-serif', fontWeight: 800, fontSize: 12.5,

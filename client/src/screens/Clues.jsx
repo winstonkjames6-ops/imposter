@@ -31,6 +31,16 @@ export default function Clues({ view, onLeave }) {
         }
       />
       <MenuOverlay isOpen={menuOpen} onClose={() => setMenuOpen(false)} isHost={view.you.isHost} onRestart={() => socket.emit('game:reset')} onLeave={onLeave} players={view.players} myId={view.you.id} />
+      {view.you.isSpectator && (
+        <div style={{
+          background: 'rgba(124,92,255,0.12)', border: '1px solid rgba(124,92,255,0.3)',
+          borderRadius: 12, padding: '8px 14px', marginBottom: 16,
+          fontFamily: 'Nunito, sans-serif', fontWeight: 700, fontSize: 13.5,
+          color: 'var(--accent2)', textAlign: 'center',
+        }}>
+          You're watching
+        </div>
+      )}
 
       {/* Role reminder */}
       <div style={{
@@ -60,7 +70,7 @@ export default function Clues({ view, onLeave }) {
       </div>
 
       {/* Clue input or submitted confirmation */}
-      {!clueData?.youSubmitted ? (
+      {!view.you.isSpectator && !clueData?.youSubmitted ? (
         <form onSubmit={submit} style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 8 }}>
           <input
             autoFocus
