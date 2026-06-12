@@ -170,6 +170,38 @@ export default function Lobby({ view, onLeave }) {
 
       {/* Footer */}
       <div style={{ paddingTop: 16 }}>
+        {view.you.isHost && (
+          <div style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            marginBottom: 14, padding: '0 2px',
+          }}>
+            <span style={{
+              fontFamily: 'Nunito, sans-serif', fontWeight: 700,
+              fontSize: 14, color: 'var(--muted)',
+            }}>
+              Auto-accept joiners
+            </span>
+            <label style={{ position: 'relative', display: 'inline-block', width: 48, height: 27, cursor: 'pointer', flexShrink: 0 }}>
+              <input
+                type="checkbox"
+                checked={!!view.autoAccept}
+                onChange={e => socket.emit('room:set-auto-accept', { value: e.target.checked })}
+                style={{ opacity: 0, width: 0, height: 0, position: 'absolute' }}
+              />
+              <span style={{
+                position: 'absolute', inset: 0, borderRadius: 27,
+                background: view.autoAccept ? 'var(--accent)' : 'var(--border)',
+                transition: 'background .15s',
+              }} />
+              <span style={{
+                position: 'absolute', top: 3,
+                left: view.autoAccept ? 'calc(100% - 24px)' : 3,
+                width: 21, height: 21, borderRadius: '50%', background: '#fff',
+                transition: 'left .15s', boxShadow: '0 1px 4px rgba(0,0,0,0.25)',
+              }} />
+            </label>
+          </div>
+        )}
         {view.you.isHost ? (
           <>
             <Btn

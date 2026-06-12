@@ -48,6 +48,7 @@ function createRoom() {
     secret: null,           // { word, category, imposterToken } — NEVER sent raw
     clues: {},              // token -> clue text
     votes: {},              // token -> targetId (target's public .id, not auth token)
+    autoAccept: false,      // if true, late joiners enter as players instead of spectators
     _cleanupTimer: null,    // setTimeout handle for empty-room GC
   };
   rooms.set(room.code, room);
@@ -132,6 +133,7 @@ function buildView(room, player) {
 
     clueData,
     voteResults,
+    autoAccept: room.autoAccept,
 
     imposterId:
       room.phase === "results"
@@ -192,7 +194,7 @@ io.on("connection", (socket) => {
     if (room.players.size >= 10)
       return callback({ ok: false, error: "Room is full." });
 
-    const isSpectator = room.phase !== "lobby";
+    const isSpectator = room.phase !== "lobby" && !room.autoAccept;
     const player = addPlayer(room, socket, name, isSpectator);
     callback({ ok: true, roomCode: room.code, token: player.token });
     broadcastViews(room);
@@ -350,6 +352,17 @@ io.on("connection", (socket) => {
     room.votes = {};
     room.secret = null;
     room.phase = "lobby";
+    callback?.({ ok: true });
+    broadcastViews(room);
+  });
+
+  // ---- Host toggles auto-accept for late joiners ----
+  socket.on("room:set-auto-accept", ({ value }, callback) => {
+    const { room, player } = locate(socket);
+    if (!room) return callback?.({ ok: false, error: "Not in a room." });
+    if (player.token !== room.hostToken)
+      return callback?.({ ok: false, error: "Only the host can change this setting." });
+    room.autoAccept = !!value;
     callback?.({ ok: true });
     broadcastViews(room);
   });
