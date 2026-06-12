@@ -105,15 +105,6 @@ export default function Home() {
           </>
         ) : (
           <>
-            {!name.trim() && (
-              <input
-                value={name}
-                onChange={e => setName(e.target.value)}
-                placeholder="Your name"
-                maxLength={16}
-                style={{ borderRadius: 14, fontWeight: 600, fontSize: 17, padding: '15px 18px', width: '100%' }}
-              />
-            )}
             <div style={{ display: 'flex', gap: 10 }}>
               <input
                 value={code}

@@ -365,6 +365,22 @@ io.on("connection", (socket) => {
     broadcastViews(room);
   });
 
+  // ---- Host manually promotes a spectator to full player ----
+  socket.on("player:accept-join", ({ id }, callback) => {
+    const { room, player } = locate(socket);
+    if (!room) return callback?.({ ok: false, error: "Not in a room." });
+    if (player.token !== room.hostToken)
+      return callback?.({ ok: false, error: "Only the host can accept players." });
+
+    const target = [...room.players.values()].find(p => p.id === id && p.spectator);
+    if (!target) return callback?.({ ok: false, error: "Spectator not found." });
+
+    target.spectator = false;
+    room.autoPending.delete(target.token);
+    callback?.({ ok: true });
+    broadcastViews(room);
+  });
+
   // ---- Host toggles auto-accept for late joiners ----
   socket.on("room:set-auto-accept", ({ value }, callback) => {
     const { room, player } = locate(socket);

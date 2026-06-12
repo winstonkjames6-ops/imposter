@@ -156,12 +156,26 @@ export default function Lobby({ view, onLeave }) {
                     <span style={{ color: 'var(--faint)', fontSize: 13 }}> (you)</span>
                   )}
                 </span>
-                <span style={{
-                  fontFamily: 'Nunito, sans-serif', fontWeight: 700,
-                  fontSize: 11.5, letterSpacing: 0.5, color: 'var(--faint)',
-                }}>
-                  WATCHING
-                </span>
+                {view.you.isHost ? (
+                  <button
+                    onClick={() => socket.emit('player:accept-join', { id: p.id })}
+                    style={{
+                      background: 'var(--accent)', border: 'none', borderRadius: 999,
+                      padding: '5px 13px', fontFamily: 'inherit', fontWeight: 700,
+                      fontSize: 12, letterSpacing: '0.05em', color: '#fff',
+                      cursor: 'pointer', WebkitTapHighlightColor: 'transparent',
+                    }}
+                  >
+                    Allow
+                  </button>
+                ) : (
+                  <span style={{
+                    fontFamily: 'Nunito, sans-serif', fontWeight: 700,
+                    fontSize: 11.5, letterSpacing: 0.5, color: 'var(--faint)',
+                  }}>
+                    WATCHING
+                  </span>
+                )}
               </div>
             ))}
           </div>
