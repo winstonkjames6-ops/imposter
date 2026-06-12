@@ -26,6 +26,12 @@ const io = new Server(httpServer, {
 
 const rooms = new Map(); // roomCode -> Room
 
+const ALLOWED_COLORS = new Set([
+  '#FF4000', '#E8A838', '#4CAF50', '#2196F3',
+  '#9C27B0', '#E91E63', '#00BCD4', '#607D8B',
+]);
+const DEFAULT_COLOR = '#607D8B';
+
 const WORD_PACKS = [
   { category: "Food", words: ["Hot dog", "Sushi", "Mambo sauce", "Pancakes", "Tacos"] },
   { category: "Sports", words: ["Volleyball", "Bowling", "Track", "Boxing", "Golf"] },
@@ -83,6 +89,7 @@ function buildView(room, player) {
       id: p.id,
       name: p.name,
       clue: room.clues[p.token] || null,
+      color: p.color,
     }));
   }
 
@@ -98,6 +105,7 @@ function buildView(room, player) {
       id: p.id,
       name: p.name,
       votes: tally[p.id] || 0,
+      color: p.color,
     }));
   }
 
@@ -117,6 +125,7 @@ function buildView(room, player) {
       connected: p.connected,
       isHost: p.token === room.hostToken,
       isSpectator: !!p.spectator,
+      color: p.color,
     })),
     // Spectators get no role — they watch but have no secret identity.
     role:
@@ -180,23 +189,25 @@ function checkVoteDone(room) {
 
 io.on("connection", (socket) => {
   // ---- Create a room ----
-  socket.on("room:create", ({ name }, callback) => {
+  socket.on("room:create", ({ name, color }, callback) => {
     const room = createRoom();
-    const player = addPlayer(room, socket, name);
+    const safeColor = ALLOWED_COLORS.has(color) ? color : DEFAULT_COLOR;
+    const player = addPlayer(room, socket, name, false, safeColor);
     room.hostToken = player.token;
     callback({ ok: true, roomCode: room.code, token: player.token });
     broadcastViews(room);
   });
 
   // ---- Join an existing room ----
-  socket.on("room:join", ({ roomCode, name }, callback) => {
+  socket.on("room:join", ({ roomCode, name, color }, callback) => {
     const room = rooms.get(roomCode?.toUpperCase());
     if (!room) return callback({ ok: false, error: "Room not found." });
     if (room.players.size >= 10)
       return callback({ ok: false, error: "Room is full." });
 
     const midGame = room.phase !== "lobby";
-    const player = addPlayer(room, socket, name, midGame);
+    const safeColor = ALLOWED_COLORS.has(color) ? color : DEFAULT_COLOR;
+    const player = addPlayer(room, socket, name, midGame, safeColor);
     if (midGame && room.autoAccept) {
       room.autoPending.add(player.token);
     }
@@ -427,7 +438,7 @@ io.on("connection", (socket) => {
 // Helpers
 // ------------------------------------------------------------
 
-function addPlayer(room, socket, name, spectator = false) {
+function addPlayer(room, socket, name, spectator = false, color = DEFAULT_COLOR) {
   const player = {
     token: randomUUID(), // auth identity — never shared with other clients
     id: randomUUID(),    // public identity — safe to expose for voting
@@ -435,6 +446,7 @@ function addPlayer(room, socket, name, spectator = false) {
     socketId: socket.id,
     connected: true,
     spectator,
+    color,
   };
   room.players.set(player.token, player);
   socket.data = { roomCode: room.code, token: player.token };

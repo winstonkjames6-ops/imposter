@@ -1,9 +1,18 @@
 import { useState, useRef } from "react";
-import { socket, saveSeat } from "../socket.js";
+import { socket, saveSeat, saveColor, loadColor } from "../socket.js";
 import { Btn, HowToPlay, PlayerBadge } from "./ui.jsx";
+
+const COLORS = ['#FF4000', '#E8A838', '#4CAF50', '#2196F3', '#9C27B0', '#E91E63', '#00BCD4', '#607D8B'];
+
+function initColor() {
+  const saved = loadColor();
+  if (saved && COLORS.includes(saved)) return saved;
+  return COLORS[Math.floor(Math.random() * COLORS.length)];
+}
 
 export default function Home() {
   const [name, setName] = useState("");
+  const [color, setColor] = useState(initColor);
   const [editingName, setEditingName] = useState(true);
   const [code, setCode] = useState("");
   const [joining, setJoining] = useState(false);
@@ -17,14 +26,14 @@ export default function Home() {
   }
 
   function create() {
-    socket.emit("room:create", { name }, (res) => {
+    socket.emit("room:create", { name, color }, (res) => {
       if (!res.ok) return setError(res.error);
       saveSeat(res.roomCode, res.token);
     });
   }
 
   function join() {
-    socket.emit("room:join", { roomCode: code, name }, (res) => {
+    socket.emit("room:join", { roomCode: code, name, color }, (res) => {
       if (!res.ok) return setError(res.error);
       saveSeat(res.roomCode, res.token);
     });
@@ -64,7 +73,7 @@ export default function Home() {
             display: 'flex', alignItems: 'center', gap: 14,
             background: 'var(--surface)', borderRadius: 20, padding: 14,
           }}>
-            <PlayerBadge name={name} size={52} isYou />
+            <PlayerBadge name={name} color={color} size={52} isYou />
             <div style={{ flex: 1 }}>
               <div style={{
                 fontWeight: 700, fontSize: 10, letterSpacing: '1.8px',
@@ -102,6 +111,25 @@ export default function Home() {
             style={{ borderRadius: 14, fontWeight: 600, fontSize: 17, padding: '15px 18px', width: '100%' }}
           />
         )}
+
+        {/* Color picker */}
+        <div style={{ display: 'flex', gap: 10, justifyContent: 'center' }}>
+          {COLORS.map(c => (
+            <button
+              key={c}
+              onClick={() => { setColor(c); saveColor(c); }}
+              style={{
+                width: 34, height: 34, borderRadius: '50%', background: c,
+                border: 'none', padding: 0, cursor: 'pointer', flexShrink: 0,
+                boxShadow: color === c
+                  ? `0 0 0 3px var(--paper), 0 0 0 5.5px ${c}`
+                  : 'none',
+                transition: 'box-shadow .12s',
+                WebkitTapHighlightColor: 'transparent',
+              }}
+            />
+          ))}
+        </div>
 
         {!joining ? (
           <>

@@ -164,8 +164,17 @@ export function nameToColor(name = '') {
   return BADGE_PALETTE[h];
 }
 
-export function PlayerBadge({ name, size = 52, isYou = false }) {
-  const { bg, text } = nameToColor(name);
+function textForBg(hex) {
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  return (r * 299 + g * 587 + b * 114) / 1000 > 160 ? '#1a1a1a' : '#fff';
+}
+
+export function PlayerBadge({ name, size = 52, color, isYou = false }) {
+  const fallback = nameToColor(name);
+  const bg = color || fallback.bg;
+  const text = color ? textForBg(color) : fallback.text;
   const r = Math.round(size * 0.27);
   const fs = Math.round(size * 0.46);
   return (
@@ -323,7 +332,7 @@ export function MenuOverlay({ isOpen, onClose, isHost, onRestart, onLeave, playe
                 onClick={() => { socket.emit('vote:kick', { targetId: p.id }); onClose(); }}
                 style={{ ...rowBase, color: 'var(--ink)', borderBottomColor: i === others.length - 1 ? 'transparent' : 'var(--line)' }}
               >
-                <PlayerBadge name={p.name} size={36} />
+                <PlayerBadge name={p.name} color={p.color} size={36} />
                 {p.name}
               </button>
             ))}

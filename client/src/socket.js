@@ -26,3 +26,14 @@ export function loadSeat() {
 export function clearSeat() {
   localStorage.removeItem(KEY);
 }
+
+// ---- Color persistence ----
+const COLOR_KEY = "imposter_color";
+
+export function saveColor(color) {
+  localStorage.setItem(COLOR_KEY, color);
+}
+
+export function loadColor() {
+  return localStorage.getItem(COLOR_KEY) || null;
+}
