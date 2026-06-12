@@ -57,6 +57,7 @@ function createRoom() {
     autoAccept: false,      // if true, late joiners are queued for next game instead of staying spectators
     autoPending: new Set(), // tokens of spectators to promote when game:reset fires
     kickVotes: new Map(),   // targetToken -> Set<voterToken>
+    packConfig: null,       // null = random | { type:'builtin', category } | { type:'custom', words[] }
     _cleanupTimer: null,    // setTimeout handle for empty-room GC
   };
   rooms.set(room.code, room);
@@ -151,6 +152,11 @@ function buildView(room, player) {
     clueData,
     voteResults,
     autoAccept: room.autoAccept,
+    packName: room.packConfig == null
+      ? 'Random'
+      : room.packConfig.type === 'builtin'
+        ? room.packConfig.category
+        : 'Custom',
 
     imposterId:
       room.phase === "results"
@@ -252,12 +258,24 @@ io.on("connection", (socket) => {
     if (room.players.size < 3)
       return callback({ ok: false, error: "Need at least 3 players." });
 
-    const pack = WORD_PACKS[Math.floor(Math.random() * WORD_PACKS.length)];
-    const word = pack.words[Math.floor(Math.random() * pack.words.length)];
+    let category, word;
+    if (room.packConfig?.type === 'builtin') {
+      const pack = WORD_PACKS.find(p => p.category === room.packConfig.category)
+                ?? WORD_PACKS[Math.floor(Math.random() * WORD_PACKS.length)];
+      category = pack.category;
+      word = pack.words[Math.floor(Math.random() * pack.words.length)];
+    } else if (room.packConfig?.type === 'custom') {
+      category = 'Custom';
+      word = room.packConfig.words[Math.floor(Math.random() * room.packConfig.words.length)];
+    } else {
+      const pack = WORD_PACKS[Math.floor(Math.random() * WORD_PACKS.length)];
+      category = pack.category;
+      word = pack.words[Math.floor(Math.random() * pack.words.length)];
+    }
     const tokens = [...room.players.keys()];
     const imposterToken = tokens[Math.floor(Math.random() * tokens.length)];
 
-    room.secret = { word, category: pack.category, imposterToken };
+    room.secret = { word, category, imposterToken };
     room.phase = "reveal";
 
     callback({ ok: true });
@@ -440,6 +458,34 @@ io.on("connection", (socket) => {
       callback?.({ ok: true });
       broadcastViews(room);
     }
+  });
+
+  // ---- Host sets the word pack ----
+  socket.on("room:set-pack", ({ type, category, words }, callback) => {
+    const { room, player } = locate(socket);
+    if (!room) return callback?.({ ok: false, error: "Not in a room." });
+    if (player.token !== room.hostToken)
+      return callback?.({ ok: false, error: "Only the host can set the word pack." });
+
+    if (type === 'random') {
+      room.packConfig = null;
+    } else if (type === 'builtin') {
+      if (!WORD_PACKS.find(p => p.category === category))
+        return callback?.({ ok: false, error: "Unknown pack." });
+      room.packConfig = { type: 'builtin', category };
+    } else if (type === 'custom') {
+      const cleaned = [...new Set(
+        (words || []).map(w => String(w).trim()).filter(w => w.length >= 2)
+      )];
+      if (cleaned.length < 4)
+        return callback?.({ ok: false, error: "Need at least 4 words (min 2 characters each)." });
+      room.packConfig = { type: 'custom', words: cleaned };
+    } else {
+      return callback?.({ ok: false, error: "Invalid type." });
+    }
+
+    callback?.({ ok: true });
+    broadcastViews(room);
   });
 
   // ---- Host toggles auto-accept for late joiners ----

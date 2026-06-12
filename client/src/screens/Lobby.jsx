@@ -5,6 +5,10 @@ import { Btn, Chip, TopBar, PlayerBadge, MenuOverlay, MenuTrigger } from "./ui.j
 export default function Lobby({ view, onLeave }) {
   const [error, setError] = useState(null);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [packOpen, setPackOpen] = useState(false);
+  const [packChoice, setPackChoice] = useState('random');
+  const [customText, setCustomText] = useState('');
+  const [packError, setPackError] = useState(null);
 
   function start() {
     socket.emit("game:start", {}, (res) => {
@@ -14,6 +18,32 @@ export default function Lobby({ view, onLeave }) {
 
   function copyCode() {
     navigator.clipboard?.writeText(view.roomCode).catch(() => {});
+  }
+
+  function openPackSheet() {
+    const n = view.packName ?? 'Random';
+    setPackChoice(n === 'Random' ? 'random' : n === 'Custom' ? 'custom' : n);
+    setPackError(null);
+    setPackOpen(true);
+  }
+
+  function savePack() {
+    setPackError(null);
+    if (packChoice === 'random') {
+      socket.emit('room:set-pack', { type: 'random' }, res => {
+        if (res.ok) setPackOpen(false); else setPackError(res.error);
+      });
+    } else if (['Food', 'Sports', 'Places'].includes(packChoice)) {
+      socket.emit('room:set-pack', { type: 'builtin', category: packChoice }, res => {
+        if (res.ok) setPackOpen(false); else setPackError(res.error);
+      });
+    } else {
+      const words = [...new Set(customText.split(',').map(w => w.trim()).filter(w => w.length >= 2))];
+      if (words.length < 4) { setPackError('Enter at least 4 words (min 2 chars each).'); return; }
+      socket.emit('room:set-pack', { type: 'custom', words }, res => {
+        if (res.ok) setPackOpen(false); else setPackError(res.error);
+      });
+    }
   }
 
   const activePlayers = view.players.filter(p => !p.isSpectator);
@@ -184,6 +214,45 @@ export default function Lobby({ view, onLeave }) {
 
       {/* Footer */}
       <div style={{ paddingTop: 16 }}>
+
+        {/* Word Pack row */}
+        <div style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          background: 'var(--surface)', border: '1px solid var(--border)',
+          borderRadius: 16, padding: '11px 14px', marginBottom: 14,
+        }}>
+          <div>
+            <div style={{
+              fontFamily: 'Nunito, sans-serif', fontWeight: 700, fontSize: 10.5,
+              letterSpacing: 1, color: 'var(--faint)', marginBottom: 2,
+            }}>
+              WORD PACK
+            </div>
+            <div style={{
+              fontFamily: 'var(--display-font)', fontWeight: 600,
+              fontSize: 15, color: 'var(--text)',
+            }}>
+              {view.packName ?? 'Random'}
+            </div>
+          </div>
+          {view.you.isHost && (
+            <button
+              onClick={openPackSheet}
+              style={{
+                background: 'none', border: 'none',
+                boxShadow: 'inset 0 0 0 1px var(--line2)',
+                borderRadius: 999, padding: '5px 13px',
+                fontFamily: 'inherit', fontWeight: 700, fontSize: 12,
+                letterSpacing: '0.06em', textTransform: 'uppercase',
+                color: 'var(--muted)', cursor: 'pointer',
+                WebkitTapHighlightColor: 'transparent',
+              }}
+            >
+              Edit
+            </button>
+          )}
+        </div>
+
         {view.you.isHost && (
           <div style={{
             display: 'flex', alignItems: 'center', justifyContent: 'space-between',
@@ -251,6 +320,102 @@ export default function Lobby({ view, onLeave }) {
           </p>
         )}
       </div>
+      {/* Pack picker bottom sheet */}
+      {packOpen && (
+        <>
+          <div
+            onClick={() => setPackOpen(false)}
+            style={{ position: 'fixed', inset: 0, zIndex: 50, background: 'rgba(0,0,0,.6)' }}
+          />
+          <div style={{
+            position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 51,
+            background: 'var(--paper)', borderRadius: '26px 26px 0 0',
+            padding: '14px 22px 40px', boxShadow: '0 -20px 50px -20px rgba(0,0,0,.4)',
+            maxHeight: '80vh', overflowY: 'auto',
+          }}>
+            <div style={{ width: 40, height: 4, borderRadius: 99, background: 'var(--line2)', margin: '0 auto 16px' }} />
+            <div style={{
+              fontFamily: 'Nunito, sans-serif', fontWeight: 700, fontSize: 11.5,
+              letterSpacing: '1.8px', textTransform: 'uppercase',
+              color: 'var(--muted)', marginBottom: 14,
+            }}>
+              Word Pack
+            </div>
+
+            {['random', 'Food', 'Sports', 'Places', 'custom'].map((opt, i, arr) => {
+              const label = opt === 'random' ? 'Random' : opt === 'custom' ? 'Custom' : opt;
+              const sel = packChoice === opt;
+              return (
+                <div key={opt}>
+                  <button
+                    onClick={() => setPackChoice(opt)}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: 14,
+                      width: '100%', background: 'none', border: 'none',
+                      padding: '13px 2px', cursor: 'pointer', textAlign: 'left',
+                      borderBottom: (opt !== 'custom' || !sel) && i < arr.length - 1
+                        ? '1px solid var(--line)' : 'none',
+                      WebkitTapHighlightColor: 'transparent',
+                    }}
+                  >
+                    <span style={{
+                      width: 22, height: 22, borderRadius: '50%', flexShrink: 0,
+                      border: sel ? 'none' : '2px solid var(--border)',
+                      background: sel ? 'var(--accent)' : 'transparent',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    }}>
+                      {sel && <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#fff' }} />}
+                    </span>
+                    <span style={{
+                      fontFamily: 'var(--display-font)', fontWeight: 600,
+                      fontSize: 16, color: 'var(--ink)',
+                    }}>
+                      {label}
+                    </span>
+                  </button>
+
+                  {opt === 'custom' && sel && (
+                    <div style={{ paddingBottom: 12, borderBottom: '1px solid var(--line)' }}>
+                      <textarea
+                        value={customText}
+                        onChange={e => { setCustomText(e.target.value); setPackError(null); }}
+                        placeholder="word1, word2, word3, word4…"
+                        rows={3}
+                        style={{
+                          width: '100%', borderRadius: 12, padding: '12px 14px',
+                          fontFamily: 'inherit', fontSize: 15, fontWeight: 500,
+                          resize: 'vertical', lineHeight: 1.5,
+                          background: 'var(--surface)', border: '1px solid var(--border)',
+                          color: 'var(--text)', outline: 'none',
+                        }}
+                      />
+                      <p style={{
+                        fontFamily: 'Nunito, sans-serif', fontSize: 12.5,
+                        color: 'var(--faint)', margin: '4px 2px 0',
+                      }}>
+                        Separate words with commas. Minimum 4 words, 2 chars each.
+                      </p>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+
+            {packError && (
+              <p style={{
+                fontFamily: 'Nunito, sans-serif', fontWeight: 700, fontSize: 13,
+                color: 'var(--red)', margin: '12px 2px 0',
+              }}>
+                {packError}
+              </p>
+            )}
+
+            <div style={{ marginTop: 18 }}>
+              <Btn variant="primary" onClick={savePack}>Save</Btn>
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }
