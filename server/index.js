@@ -48,7 +48,8 @@ function createRoom() {
     secret: null,           // { word, category, imposterToken } — NEVER sent raw
     clues: {},              // token -> clue text
     votes: {},              // token -> targetId (target's public .id, not auth token)
-    autoAccept: false,      // if true, late joiners enter as players instead of spectators
+    autoAccept: false,      // if true, late joiners are queued for next game instead of staying spectators
+    autoPending: new Set(), // tokens of spectators to promote when game:reset fires
     _cleanupTimer: null,    // setTimeout handle for empty-room GC
   };
   rooms.set(room.code, room);
@@ -194,8 +195,11 @@ io.on("connection", (socket) => {
     if (room.players.size >= 10)
       return callback({ ok: false, error: "Room is full." });
 
-    const isSpectator = room.phase !== "lobby" && !room.autoAccept;
-    const player = addPlayer(room, socket, name, isSpectator);
+    const midGame = room.phase !== "lobby";
+    const player = addPlayer(room, socket, name, midGame);
+    if (midGame && room.autoAccept) {
+      room.autoPending.add(player.token);
+    }
     callback({ ok: true, roomCode: room.code, token: player.token });
     broadcastViews(room);
   });
@@ -352,6 +356,11 @@ io.on("connection", (socket) => {
     room.votes = {};
     room.secret = null;
     room.phase = "lobby";
+    for (const token of room.autoPending) {
+      const p = room.players.get(token);
+      if (p) p.spectator = false;
+    }
+    room.autoPending.clear();
     callback?.({ ok: true });
     broadcastViews(room);
   });

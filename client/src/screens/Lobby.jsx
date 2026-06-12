@@ -179,7 +179,7 @@ export default function Lobby({ view, onLeave }) {
               fontFamily: 'Nunito, sans-serif', fontWeight: 700,
               fontSize: 14, color: 'var(--muted)',
             }}>
-              Auto-accept joiners
+              Auto-join next game
             </span>
             <label style={{ position: 'relative', display: 'inline-block', width: 48, height: 27, cursor: 'pointer', flexShrink: 0 }}>
               <input
