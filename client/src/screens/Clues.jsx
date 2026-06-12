@@ -42,74 +42,78 @@ export default function Clues({ view, onLeave }) {
         </div>
       )}
 
-      {/* Role reminder */}
-      <div style={{
-        textAlign: 'center',
-        background: role?.isImposter ? 'rgba(255,77,109,0.08)' : 'var(--surface)',
-        border: `1px solid ${role?.isImposter ? 'rgba(255,77,109,0.3)' : 'var(--border)'}`,
-        borderRadius: 22, padding: '18px 16px', marginBottom: 22,
-      }}>
-        <div style={{
-          fontFamily: 'Nunito, sans-serif', fontWeight: 700, fontSize: 12.5,
-          letterSpacing: 1, color: 'var(--faint)',
-        }}>
-          {role?.isImposter ? 'YOU ARE THE IMPOSTER' : 'CATEGORY'}
-        </div>
-        <div style={{
-          fontFamily: 'var(--display-font)', fontWeight: 700, fontSize: 32,
-          color: role?.isImposter ? 'var(--red)' : 'var(--text)', marginTop: 4,
-        }}>
-          {role?.isImposter ? 'Wing it 🎭' : role?.category}
-        </div>
-        <div style={{
-          fontFamily: 'Nunito, sans-serif', fontWeight: 600, fontSize: 13.5,
-          color: 'var(--muted)', marginTop: 6,
-        }}>
-          Give one clue — don't say the word itself.
-        </div>
-      </div>
-
-      {/* Clue input or submitted confirmation */}
-      {!view.you.isSpectator && !clueData?.youSubmitted ? (
-        <form onSubmit={submit} style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 8 }}>
-          <input
-            autoFocus
-            type="text"
-            maxLength={50}
-            value={text}
-            onChange={e => { setText(e.target.value); setError(null); }}
-            placeholder="Your one-word clue…"
-            style={{
-              borderRadius: 16, fontFamily: 'var(--display-font)', fontWeight: 500,
-              fontSize: 19, padding: '17px 18px', textAlign: 'center', width: '100%',
-            }}
-          />
-          <Btn variant="primary" disabled={!text.trim()} onClick={submit}>
-            Submit clue
-          </Btn>
-          {error && (
-            <p style={{ fontFamily: 'Nunito, sans-serif', fontWeight: 700, fontSize: 13, color: 'var(--red)', textAlign: 'center' }}>
-              {error}
-            </p>
-          )}
-        </form>
-      ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 8 }}>
+      {!view.you.isSpectator && (
+        <>
+          {/* Role reminder */}
           <div style={{
-            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
-            background: 'rgba(60,224,160,0.1)',
-            border: '1px solid rgba(60,224,160,0.3)', borderRadius: 16, padding: 16,
+            textAlign: 'center',
+            background: role?.isImposter ? 'rgba(255,77,109,0.08)' : 'var(--surface)',
+            border: `1px solid ${role?.isImposter ? 'rgba(255,77,109,0.3)' : 'var(--border)'}`,
+            borderRadius: 22, padding: '18px 16px', marginBottom: 22,
           }}>
-            <span style={{ fontFamily: 'Nunito, sans-serif', fontWeight: 700, color: 'var(--green)' }}>
-              ✓ Clue submitted
-            </span>
+            <div style={{
+              fontFamily: 'Nunito, sans-serif', fontWeight: 700, fontSize: 12.5,
+              letterSpacing: 1, color: 'var(--faint)',
+            }}>
+              {role?.isImposter ? 'YOU ARE THE IMPOSTER' : 'CATEGORY'}
+            </div>
+            <div style={{
+              fontFamily: 'var(--display-font)', fontWeight: 700, fontSize: 32,
+              color: role?.isImposter ? 'var(--red)' : 'var(--text)', marginTop: 4,
+            }}>
+              {role?.isImposter ? 'Wing it 🎭' : role?.category}
+            </div>
+            <div style={{
+              fontFamily: 'Nunito, sans-serif', fontWeight: 600, fontSize: 13.5,
+              color: 'var(--muted)', marginTop: 6,
+            }}>
+              Give one clue — don't say the word itself.
+            </div>
           </div>
-          {view.you.isHost && (
-            <Btn variant="secondary" onClick={() => socket.emit("clue:skip")}>
-              Skip waiting players
-            </Btn>
+
+          {/* Clue input or submitted confirmation */}
+          {!clueData?.youSubmitted ? (
+            <form onSubmit={submit} style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 8 }}>
+              <input
+                autoFocus
+                type="text"
+                maxLength={50}
+                value={text}
+                onChange={e => { setText(e.target.value); setError(null); }}
+                placeholder="Your one-word clue…"
+                style={{
+                  borderRadius: 16, fontFamily: 'var(--display-font)', fontWeight: 500,
+                  fontSize: 19, padding: '17px 18px', textAlign: 'center', width: '100%',
+                }}
+              />
+              <Btn variant="primary" disabled={!text.trim()} onClick={submit}>
+                Submit clue
+              </Btn>
+              {error && (
+                <p style={{ fontFamily: 'Nunito, sans-serif', fontWeight: 700, fontSize: 13, color: 'var(--red)', textAlign: 'center' }}>
+                  {error}
+                </p>
+              )}
+            </form>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 8 }}>
+              <div style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
+                background: 'rgba(60,224,160,0.1)',
+                border: '1px solid rgba(60,224,160,0.3)', borderRadius: 16, padding: 16,
+              }}>
+                <span style={{ fontFamily: 'Nunito, sans-serif', fontWeight: 700, color: 'var(--green)' }}>
+                  ✓ Clue submitted
+                </span>
+              </div>
+              {view.you.isHost && (
+                <Btn variant="secondary" onClick={() => socket.emit("clue:skip")}>
+                  Skip waiting players
+                </Btn>
+              )}
+            </div>
           )}
-        </div>
+        </>
       )}
 
       {/* Players header */}
@@ -117,7 +121,7 @@ export default function Clues({ view, onLeave }) {
         fontFamily: 'Nunito, sans-serif', fontWeight: 800, fontSize: 12.5,
         letterSpacing: 1, color: 'var(--faint)', margin: '16px 0 10px',
       }}>
-        SUBMITTED {clueData?.submitted ?? 0}/{clueData?.total ?? 0}
+        SUBMITTED {clueData?.submitted ?? 0}/{players.filter(p => !p.isSpectator).length}
       </div>
 
       {/* Player list */}

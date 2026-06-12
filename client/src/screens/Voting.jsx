@@ -57,25 +57,8 @@ export default function Voting({ view, onLeave }) {
           const isYou = entry.id === view.you.id;
           const sel = localVote === entry.id;
 
-          return (
-            <button
-              key={entry.id}
-              disabled={isYou || alreadyVoted}
-              onClick={() => !isYou && !alreadyVoted && setLocalVote(sel ? null : entry.id)}
-              style={{
-                display: 'flex', alignItems: 'center', gap: 14, textAlign: 'left',
-                cursor: isYou || alreadyVoted ? 'default' : 'pointer',
-                background: sel
-                  ? 'color-mix(in srgb, var(--accent) 16%, var(--surface))'
-                  : 'var(--surface)',
-                border: sel ? '2px solid var(--accent)' : '2px solid var(--border)',
-                borderRadius: 20, padding: '12px 15px',
-                opacity: isYou ? 0.5 : 1,
-                transition: 'all .12s',
-                boxShadow: sel ? '0 10px 24px -10px var(--accent-glow)' : 'none',
-                WebkitTapHighlightColor: 'transparent', width: '100%',
-              }}
-            >
+          const rowContent = (
+            <>
               <PlayerBadge name={entry.name} size={52} />
               <div style={{ flex: 1 }}>
                 <div style={{
@@ -101,40 +84,75 @@ export default function Voting({ view, onLeave }) {
                   </div>
                 )}
               </div>
-              {/* Selection ring */}
-              <div style={{
-                width: 26, height: 26, borderRadius: '50%', flexShrink: 0,
-                border: sel ? 'none' : '2px solid var(--border)',
-                background: sel ? 'var(--accent)' : 'transparent',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                transition: 'all .12s',
-              }}>
-                {sel && (
-                  <svg width="14" height="14" viewBox="0 0 16 16">
-                    <path d="M3 8.5l3.2 3.2L13 4.5" stroke="#fff" strokeWidth="2.6"
-                      fill="none" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                )}
-              </div>
+              {!view.you.isSpectator && (
+                <div style={{
+                  width: 26, height: 26, borderRadius: '50%', flexShrink: 0,
+                  border: sel ? 'none' : '2px solid var(--border)',
+                  background: sel ? 'var(--accent)' : 'transparent',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  transition: 'all .12s',
+                }}>
+                  {sel && (
+                    <svg width="14" height="14" viewBox="0 0 16 16">
+                      <path d="M3 8.5l3.2 3.2L13 4.5" stroke="#fff" strokeWidth="2.6"
+                        fill="none" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  )}
+                </div>
+              )}
+            </>
+          );
+
+          const rowStyle = {
+            display: 'flex', alignItems: 'center', gap: 14, textAlign: 'left',
+            background: sel
+              ? 'color-mix(in srgb, var(--accent) 16%, var(--surface))'
+              : 'var(--surface)',
+            border: sel ? '2px solid var(--accent)' : '2px solid var(--border)',
+            borderRadius: 20, padding: '12px 15px',
+            opacity: isYou && !view.you.isSpectator ? 0.5 : 1,
+            transition: 'all .12s',
+            boxShadow: sel ? '0 10px 24px -10px var(--accent-glow)' : 'none',
+            width: '100%',
+          };
+
+          if (view.you.isSpectator) {
+            return <div key={entry.id} style={rowStyle}>{rowContent}</div>;
+          }
+
+          return (
+            <button
+              key={entry.id}
+              disabled={isYou || alreadyVoted}
+              onClick={() => !isYou && !alreadyVoted && setLocalVote(sel ? null : entry.id)}
+              style={{
+                ...rowStyle,
+                cursor: isYou || alreadyVoted ? 'default' : 'pointer',
+                WebkitTapHighlightColor: 'transparent',
+              }}
+            >
+              {rowContent}
             </button>
           );
         })}
       </div>
 
-      <div style={{ paddingTop: 14 }}>
-        <Btn
-          variant="danger"
-          disabled={!localVote || alreadyVoted}
-          onClick={lockVote}
-        >
-          {alreadyVoted ? 'Vote locked in' : localVote ? 'Lock in vote' : 'Pick someone first'}
-        </Btn>
-        {error && (
-          <p style={{ fontFamily: 'Nunito, sans-serif', fontWeight: 700, fontSize: 13, color: 'var(--red)', textAlign: 'center', marginTop: 8 }}>
-            {error}
-          </p>
-        )}
-      </div>
+      {!view.you.isSpectator && (
+        <div style={{ paddingTop: 14 }}>
+          <Btn
+            variant="danger"
+            disabled={!localVote || alreadyVoted}
+            onClick={lockVote}
+          >
+            {alreadyVoted ? 'Vote locked in' : localVote ? 'Lock in vote' : 'Pick someone first'}
+          </Btn>
+          {error && (
+            <p style={{ fontFamily: 'Nunito, sans-serif', fontWeight: 700, fontSize: 13, color: 'var(--red)', textAlign: 'center', marginTop: 8 }}>
+              {error}
+            </p>
+          )}
+        </div>
+      )}
     </div>
   );
 }

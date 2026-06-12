@@ -66,39 +66,45 @@ export default function Home() {
           }}
         />
 
-        <Btn variant="primary" disabled={!name.trim()} onClick={create}>
-          Create a room
-        </Btn>
-
         {!joining ? (
-          <Btn variant="ghost" onClick={() => setJoining(true)}>
-            Join with a code
-          </Btn>
-        ) : (
-          <div style={{ display: 'flex', gap: 10 }}>
-            <input
-              value={code}
-              onChange={e => { setCode(e.target.value.toUpperCase()); setError(null); }}
-              onKeyDown={e => e.key === 'Enter' && name.trim() && code.length === 4 && join()}
-              placeholder="CODE"
-              maxLength={4}
-              autoFocus
-              style={{
-                flex: 1, borderRadius: 16, fontFamily: 'var(--display-font)',
-                fontWeight: 700, fontSize: 22, padding: '17px 12px',
-                textAlign: 'center', letterSpacing: 6,
-              }}
-            />
-            <Btn
-              variant="primary"
-              disabled={!name.trim() || code.length !== 4}
-              onClick={join}
-              full={false}
-              style={{ flex: 1 }}
-            >
-              Join
+          <>
+            <Btn variant="primary" disabled={!name.trim()} onClick={create}>
+              Create a room
             </Btn>
-          </div>
+            <Btn variant="ghost" onClick={() => setJoining(true)}>
+              Join with a code
+            </Btn>
+          </>
+        ) : (
+          <>
+            <div style={{ display: 'flex', gap: 10 }}>
+              <input
+                value={code}
+                onChange={e => { setCode(e.target.value.toUpperCase()); setError(null); }}
+                onKeyDown={e => e.key === 'Enter' && name.trim() && code.length === 4 && join()}
+                placeholder="CODE"
+                maxLength={4}
+                autoFocus
+                style={{
+                  flex: 1, borderRadius: 16, fontFamily: 'var(--display-font)',
+                  fontWeight: 700, fontSize: 22, padding: '17px 12px',
+                  textAlign: 'center', letterSpacing: 6,
+                }}
+              />
+              <Btn
+                variant="primary"
+                disabled={!name.trim() || code.length !== 4}
+                onClick={join}
+                full={false}
+                style={{ flex: 1 }}
+              >
+                Join
+              </Btn>
+            </div>
+            <Btn variant="ghost" onClick={() => { setJoining(false); setCode(""); setError(null); }}>
+              ← Back
+            </Btn>
+          </>
         )}
 
         <Btn variant="ghost" onClick={() => setShowRules(true)}>
