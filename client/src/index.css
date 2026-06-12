@@ -2,20 +2,34 @@
 
 /* ── Design tokens ─────────────────────────────────────────── */
 :root {
-  --bg:      #161228;
-  --bg2:     #0C0918;
-  --surface:  rgba(255,255,255,0.055);
-  --surface2: rgba(255,255,255,0.09);
-  --border:   rgba(255,255,255,0.10);
-  --text:    #F4F1FF;
-  --muted:   #A39EC2;
-  --faint:   #6E6890;
-  --accent:  #7C5CFF;
-  --accent2: #B14DFF;
-  --red:     #FF4D6D;
-  --green:   #3CE0A0;
-  --accent-glow: color-mix(in srgb, var(--accent) 50%, transparent);
-  --display-font: 'Fredoka', sans-serif;
+  --paper:    #111009;
+  --stage:    #0A0906;
+  --stage2:   #040302;
+  --surface:  #1C1714;
+  --surface2: #252018;
+  --ink:      #F3EEEB;
+  --ink-soft: #E2DAD4;
+  --muted:    #857B73;
+  --faint:    #6F655E;
+  --line:     rgba(255,255,255,.12);
+  --line2:    rgba(255,255,255,.22);
+  --accent:   #FF4000;
+  --accent-ink: #FF7A57;
+  --on-accent: #fff;
+  --green:    #3CE0A0;
+  --red:      #FF4D6D;
+  --shadow:   0 26px 60px -30px rgba(0,0,0,.75);
+  --on-invert: rgba(17,16,9,.55);
+  --on-invert-line: rgba(17,16,9,.22);
+
+  /* Legacy aliases so nothing that hasn't been updated yet breaks */
+  --bg:           var(--paper);
+  --bg2:          var(--stage2);
+  --border:       var(--line);
+  --text:         var(--ink);
+  --accent2:      var(--accent-ink);
+  --accent-glow:  rgba(255,64,0,.35);
+  --display-font: 'Helvetica Neue', Helvetica, Arial, sans-serif;
 }
 
 /* ── Base ──────────────────────────────────────────────────── */
@@ -23,23 +37,21 @@
 html, body { margin: 0; padding: 0; }
 
 body {
-  font-family: 'Nunito', sans-serif;
-  color: var(--text);
+  font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  color: var(--ink);
   -webkit-font-smoothing: antialiased;
   min-height: 100vh;
-  background:
-    radial-gradient(900px 500px at 50% -5%, color-mix(in srgb, var(--accent) 16%, transparent), transparent 60%),
-    radial-gradient(700px 500px at 90% 100%, rgba(255,92,168,0.10), transparent 55%),
-    #08060F;
+  background: radial-gradient(120% 80% at 50% 0%, var(--stage), var(--stage2) 72%);
 }
 
 /* ── Input resets ──────────────────────────────────────────── */
 input {
   background: var(--surface2);
-  border: 1px solid var(--border);
-  color: var(--text);
+  border: 1.5px solid var(--line);
+  color: var(--ink);
   outline: none;
   transition: border-color .15s;
+  font-family: inherit;
 }
 input::placeholder { color: var(--faint); }
 input:focus { border-color: var(--accent); }
@@ -57,7 +69,6 @@ input:focus { border-color: var(--accent); }
   max-width: 600px;
   min-height: 100dvh;
   position: relative;
-  /* Containing block for position:fixed descendants (bottom sheet, overlays). */
   transform: translateZ(0);
 }
 

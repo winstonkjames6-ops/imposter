@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { socket, saveSeat } from "../socket.js";
-import { Btn, HowToPlay } from "./ui.jsx";
+import { Btn, HowToPlay, PlayerBadge } from "./ui.jsx";
 
 export default function Home() {
   const [name, setName] = useState("");
@@ -26,45 +26,73 @@ export default function Home() {
   return (
     <div style={{
       display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
-      minHeight: '100vh', padding: '64px 22px 48px',
+      minHeight: '100vh', padding: '58px 20px 32px',
     }}>
       {/* Hero */}
-      <div style={{ textAlign: 'center' }}>
+      <div>
+        <div style={{ height: 5, width: 38, background: 'var(--accent)', borderRadius: 2, marginBottom: 18 }} />
         <div style={{
-          fontFamily: 'Nunito, sans-serif', fontWeight: 800, fontSize: 13,
-          letterSpacing: 3, color: 'var(--accent2)', marginBottom: 8, textTransform: 'uppercase',
+          fontWeight: 700, fontSize: 11.5, letterSpacing: '1.8px',
+          textTransform: 'uppercase', color: 'var(--accent-ink)', marginBottom: 12,
         }}>
           Who's faking it?
         </div>
         <h1 style={{
-          fontFamily: 'var(--display-font)', fontWeight: 700, fontSize: 72,
-          lineHeight: 0.92, letterSpacing: -1, textTransform: 'uppercase',
-          margin: 0, color: 'var(--text)', textShadow: '0 4px 0 rgba(0,0,0,0.25)',
+          fontWeight: 800, letterSpacing: '-0.045em', lineHeight: 0.9,
+          textTransform: 'uppercase', fontSize: 72, margin: 0, color: 'var(--ink)',
         }}>
-          <span style={{ color: 'var(--red)' }}>IM</span>POSTER
+          Imposter<span style={{ color: 'var(--accent)' }}>.</span>
         </h1>
-        <p style={{
-          fontFamily: 'Nunito, sans-serif', fontWeight: 600, fontSize: 15.5,
-          color: 'var(--muted)', maxWidth: 270, margin: '16px auto 0', lineHeight: 1.5,
-        }}>
-          Everyone gets the secret word — except one. Drop one-word clues, sniff out the fake.
+        <p style={{ fontSize: 16, lineHeight: 1.5, color: 'var(--muted)', margin: '18px 0 0', maxWidth: 300 }}>
+          Everyone gets the secret word — except one. Drop a one-word clue, then sniff out the fake.
         </p>
       </div>
 
       {/* Form */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-        <input
-          value={name}
-          onChange={e => setName(e.target.value)}
-          onKeyDown={e => e.key === 'Enter' && name.trim() && create()}
-          placeholder="Your name"
-          maxLength={16}
-          autoFocus
-          style={{
-            borderRadius: 16, fontFamily: 'var(--display-font)', fontWeight: 500,
-            fontSize: 19, padding: '17px 18px', textAlign: 'center', width: '100%',
-          }}
-        />
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+
+        {/* Name: ID card when set (and not in join flow), input otherwise */}
+        {name.trim() && !joining ? (
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: 14,
+            background: 'var(--surface)', borderRadius: 20, padding: 14,
+          }}>
+            <PlayerBadge name={name} size={52} isYou />
+            <div style={{ flex: 1 }}>
+              <div style={{
+                fontWeight: 700, fontSize: 10, letterSpacing: '1.8px',
+                textTransform: 'uppercase', color: 'var(--muted)', marginBottom: 2,
+              }}>
+                Playing as
+              </div>
+              <div style={{ fontWeight: 700, fontSize: 19, color: 'var(--ink)' }}>{name}</div>
+            </div>
+            <button
+              onClick={() => setName("")}
+              style={{
+                background: 'none', border: 'none',
+                boxShadow: 'inset 0 0 0 1px var(--line2)',
+                borderRadius: 999, padding: '5px 11px',
+                fontFamily: 'inherit', fontWeight: 700, fontSize: 11,
+                letterSpacing: '0.06em', textTransform: 'uppercase',
+                color: 'var(--muted)', cursor: 'pointer',
+                WebkitTapHighlightColor: 'transparent',
+              }}
+            >
+              Edit
+            </button>
+          </div>
+        ) : (
+          <input
+            value={name}
+            onChange={e => setName(e.target.value)}
+            onKeyDown={e => e.key === 'Enter' && name.trim() && !joining && create()}
+            placeholder="Your name"
+            maxLength={16}
+            autoFocus={!joining}
+            style={{ borderRadius: 14, fontWeight: 600, fontSize: 17, padding: '15px 18px', width: '100%' }}
+          />
+        )}
 
         {!joining ? (
           <>
@@ -77,6 +105,15 @@ export default function Home() {
           </>
         ) : (
           <>
+            {!name.trim() && (
+              <input
+                value={name}
+                onChange={e => setName(e.target.value)}
+                placeholder="Your name"
+                maxLength={16}
+                style={{ borderRadius: 14, fontWeight: 600, fontSize: 17, padding: '15px 18px', width: '100%' }}
+              />
+            )}
             <div style={{ display: 'flex', gap: 10 }}>
               <input
                 value={code}
@@ -86,9 +123,8 @@ export default function Home() {
                 maxLength={4}
                 autoFocus
                 style={{
-                  flex: 1, borderRadius: 16, fontFamily: 'var(--display-font)',
-                  fontWeight: 700, fontSize: 22, padding: '17px 12px',
-                  textAlign: 'center', letterSpacing: 6,
+                  flex: 1, borderRadius: 14, fontWeight: 700,
+                  fontSize: 22, padding: '15px 12px', textAlign: 'center', letterSpacing: 6,
                 }}
               />
               <Btn
@@ -107,19 +143,25 @@ export default function Home() {
           </>
         )}
 
-        <Btn variant="ghost" onClick={() => setShowRules(true)}>
-          How to play
-        </Btn>
+        <button
+          onClick={() => setShowRules(true)}
+          style={{
+            background: 'none', border: 'none', cursor: 'pointer',
+            color: 'var(--muted)', fontWeight: 600, fontSize: 14.5,
+            textAlign: 'center', padding: '8px 0 2px', fontFamily: 'inherit',
+            WebkitTapHighlightColor: 'transparent',
+          }}
+        >
+          How to play →
+        </button>
 
         {error && (
-          <p style={{
-            fontFamily: 'Nunito, sans-serif', fontWeight: 700, fontSize: 14,
-            color: 'var(--red)', textAlign: 'center', margin: 0,
-          }}>
+          <p style={{ fontWeight: 700, fontSize: 14, color: 'var(--accent)', textAlign: 'center', margin: 0 }}>
             {error}
           </p>
         )}
       </div>
+
       {showRules && <HowToPlay onClose={() => setShowRules(false)} />}
     </div>
   );
