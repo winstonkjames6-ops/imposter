@@ -56,6 +56,7 @@ function createRoom() {
     votes: {},              // token -> targetId (target's public .id, not auth token)
     autoAccept: false,      // if true, late joiners are queued for next game instead of staying spectators
     autoPending: new Set(), // tokens of spectators to promote when game:reset fires
+    kickVotes: new Map(),   // targetToken -> Set<voterToken>
     _cleanupTimer: null,    // setTimeout handle for empty-room GC
   };
   rooms.set(room.code, room);
@@ -126,7 +127,13 @@ function buildView(room, player) {
       isHost: p.token === room.hostToken,
       isSpectator: !!p.spectator,
       color: p.color,
+      kickVoteCount: room.kickVotes.get(p.token)?.size ?? 0,
     })),
+    kickVotes: Object.fromEntries(
+      [...room.kickVotes.entries()]
+        .filter(([token]) => room.players.has(token))
+        .map(([token, voters]) => [room.players.get(token).name, voters.size])
+    ),
     // Spectators get no role — they watch but have no secret identity.
     role:
       player.spectator || room.phase === "lobby" || !room.secret
@@ -367,6 +374,7 @@ io.on("connection", (socket) => {
     room.votes = {};
     room.secret = null;
     room.phase = "lobby";
+    room.kickVotes = new Map();
     for (const token of room.autoPending) {
       const p = room.players.get(token);
       if (p) p.spectator = false;
@@ -390,6 +398,48 @@ io.on("connection", (socket) => {
     room.autoPending.delete(target.token);
     callback?.({ ok: true });
     broadcastViews(room);
+  });
+
+  // ---- Vote to kick a player ----
+  socket.on("kick:vote", ({ targetId }, callback) => {
+    const { room, player } = locate(socket);
+    if (!room) return callback?.({ ok: false, error: "Not in a room." });
+    if (player.spectator) return callback?.({ ok: false, error: "Spectators cannot vote." });
+
+    const target = [...room.players.values()].find(p => p.id === targetId && !p.spectator);
+    if (!target) return callback?.({ ok: false, error: "Invalid target." });
+    if (target.token === player.token) return callback?.({ ok: false, error: "Cannot vote to kick yourself." });
+
+    if (!room.kickVotes.has(target.token)) room.kickVotes.set(target.token, new Set());
+    room.kickVotes.get(target.token).add(player.token);
+
+    const connectedActive = [...room.players.values()].filter(p => p.connected && !p.spectator);
+    const reached = room.kickVotes.get(target.token).size > connectedActive.length / 2;
+
+    if (reached) {
+      const kickedName = target.name;
+      const kickedId = target.id;
+      const kickedSocketId = target.socketId;
+
+      // Notify everyone (including the kicked player) before removing them.
+      for (const p of room.players.values()) {
+        if (p.socketId) io.to(p.socketId).emit("kick:result", { name: kickedName, kickedId });
+      }
+      if (kickedSocketId) io.to(kickedSocketId).emit("kick:result", { name: kickedName, kickedId });
+
+      room.players.delete(target.token);
+      room.kickVotes.delete(target.token);
+      if (target.token === room.hostToken) {
+        const nextHost = [...room.players.values()].find(p => p.connected);
+        room.hostToken = nextHost?.token ?? null;
+      }
+
+      callback?.({ ok: true });
+      broadcastViews(room);
+    } else {
+      callback?.({ ok: true });
+      broadcastViews(room);
+    }
   });
 
   // ---- Host toggles auto-accept for late joiners ----

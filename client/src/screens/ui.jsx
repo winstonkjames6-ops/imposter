@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { socket, clearSeat } from "../socket.js";
 
 // ── Btn ────────────────────────────────────────────────────
@@ -273,15 +273,50 @@ export function MenuTrigger({ onClick }) {
 // ── MenuOverlay bottom sheet ───────────────────────────────
 export function MenuOverlay({ isOpen, onClose, isHost, onRestart, onLeave, players = [], myId }) {
   const [sub, setSub] = useState(null);
+  const [toast, setToast] = useState(null);
+  const toastTimer = useRef(null);
 
   useEffect(() => {
     if (!isOpen) setSub(null);
   }, [isOpen]);
 
-  if (!isOpen) return null;
-  if (sub === 'rules') return <HowToPlay onClose={() => setSub(null)} />;
+  // Listen for kick results at all times (menu open or closed).
+  useEffect(() => {
+    function onKickResult({ name, kickedId }) {
+      if (kickedId === myId) {
+        clearSeat();
+        onLeave();
+        return;
+      }
+      if (toastTimer.current) clearTimeout(toastTimer.current);
+      setToast(`${name} was removed by vote.`);
+      toastTimer.current = setTimeout(() => setToast(null), 4000);
+    }
+    socket.on('kick:result', onKickResult);
+    return () => socket.off('kick:result', onKickResult);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const others = players.filter(p => p.id !== myId);
+  const toastEl = toast ? (
+    <div style={{
+      position: 'fixed', bottom: 90, left: 0, right: 0,
+      display: 'flex', justifyContent: 'center', zIndex: 400,
+      pointerEvents: 'none',
+    }}>
+      <div style={{
+        background: 'var(--ink)', color: 'var(--paper)', borderRadius: 12,
+        padding: '10px 20px', fontFamily: 'Nunito, sans-serif',
+        fontWeight: 700, fontSize: 14, boxShadow: '0 4px 20px rgba(0,0,0,0.35)',
+      }}>
+        {toast}
+      </div>
+    </div>
+  ) : null;
+
+  if (!isOpen) return toastEl;
+  if (sub === 'rules') return <>{toastEl}<HowToPlay onClose={() => setSub(null)} /></>;
+
+  // Non-spectator players other than yourself — eligible kick targets.
+  const kickable = players.filter(p => p.id !== myId && !p.isSpectator);
 
   const rowBase = {
     display: 'flex', alignItems: 'center', gap: 14,
@@ -308,6 +343,7 @@ export function MenuOverlay({ isOpen, onClose, isHost, onRestart, onLeave, playe
 
   return (
     <>
+      {toastEl}
       <div onClick={onClose} style={{ position: 'fixed', inset: 0, zIndex: 50, background: 'rgba(0,0,0,.6)' }} />
       <div style={{
         position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 51,
@@ -324,17 +360,43 @@ export function MenuOverlay({ isOpen, onClose, isHost, onRestart, onLeave, playe
             <button onClick={() => setSub(null)} style={{ ...rowBase, color: 'var(--accent-ink)' }}>
               ← Back
             </button>
-            {others.length === 0 ? (
+            {kickable.length === 0 ? (
               <p style={{ margin: 0, padding: '16px 0', fontSize: 14, color: 'var(--faint)' }}>No other players</p>
-            ) : others.map((p, i) => (
-              <button
+            ) : kickable.map((p, i) => (
+              <div
                 key={p.id}
-                onClick={() => { socket.emit('vote:kick', { targetId: p.id }); onClose(); }}
-                style={{ ...rowBase, color: 'var(--ink)', borderBottomColor: i === others.length - 1 ? 'transparent' : 'var(--line)' }}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 14,
+                  padding: '12px 6px',
+                  borderBottom: i < kickable.length - 1 ? '1px solid var(--line)' : 'none',
+                }}
               >
                 <PlayerBadge name={p.name} color={p.color} size={36} />
-                {p.name}
-              </button>
+                <span style={{ flex: 1, fontFamily: 'var(--display-font)', fontWeight: 600, fontSize: 16, color: 'var(--ink)' }}>
+                  {p.name}
+                  {p.kickVoteCount > 0 && (
+                    <span style={{
+                      marginLeft: 8, fontFamily: 'Nunito, sans-serif', fontWeight: 700,
+                      fontSize: 12, color: 'var(--faint)',
+                    }}>
+                      {p.kickVoteCount} vote{p.kickVoteCount !== 1 ? 's' : ''}
+                    </span>
+                  )}
+                </span>
+                <button
+                  onClick={() => socket.emit('kick:vote', { targetId: p.id })}
+                  style={{
+                    background: 'none', border: 'none',
+                    boxShadow: 'inset 0 0 0 1.5px var(--line2)',
+                    borderRadius: 999, padding: '5px 14px',
+                    fontFamily: 'inherit', fontWeight: 700, fontSize: 12,
+                    letterSpacing: '0.05em', color: 'var(--ink)',
+                    cursor: 'pointer', WebkitTapHighlightColor: 'transparent',
+                  }}
+                >
+                  Vote
+                </button>
+              </div>
             ))}
           </>
         ) : (
