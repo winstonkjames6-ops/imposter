@@ -1,13 +1,20 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { socket, saveSeat } from "../socket.js";
 import { Btn, HowToPlay, PlayerBadge } from "./ui.jsx";
 
 export default function Home() {
   const [name, setName] = useState("");
+  const [editingName, setEditingName] = useState(true);
   const [code, setCode] = useState("");
   const [joining, setJoining] = useState(false);
   const [error, setError] = useState(null);
   const [showRules, setShowRules] = useState(false);
+  const nameInputRef = useRef(null);
+
+  function handleEditName() {
+    setEditingName(true);
+    requestAnimationFrame(() => nameInputRef.current?.focus());
+  }
 
   function create() {
     socket.emit("room:create", { name }, (res) => {
@@ -51,8 +58,8 @@ export default function Home() {
       {/* Form */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
 
-        {/* Name: ID card when set (and not in join flow), input otherwise */}
-        {name.trim() && !joining ? (
+        {/* Name: input by default; "Playing as" card after blur with a name set */}
+        {!editingName && name.trim() ? (
           <div style={{
             display: 'flex', alignItems: 'center', gap: 14,
             background: 'var(--surface)', borderRadius: 20, padding: 14,
@@ -68,7 +75,7 @@ export default function Home() {
               <div style={{ fontWeight: 700, fontSize: 19, color: 'var(--ink)' }}>{name}</div>
             </div>
             <button
-              onClick={() => setName("")}
+              onClick={handleEditName}
               style={{
                 background: 'none', border: 'none',
                 boxShadow: 'inset 0 0 0 1px var(--line2)',
@@ -84,8 +91,10 @@ export default function Home() {
           </div>
         ) : (
           <input
+            ref={nameInputRef}
             value={name}
             onChange={e => setName(e.target.value)}
+            onBlur={() => { if (name.trim()) setEditingName(false); }}
             onKeyDown={e => e.key === 'Enter' && name.trim() && !joining && create()}
             placeholder="Your name"
             maxLength={16}
