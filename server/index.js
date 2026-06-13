@@ -91,6 +91,14 @@ function buildView(room, player) {
       total: connectedActive.length,
       youSubmitted: !!room.clues[player.token],
     };
+  } else if (room.phase === "clue-review") {
+    const lastRound = room.cluesHistory[room.cluesHistory.length - 1] ?? {};
+    clueData = activePlayers.map(p => ({
+      id: p.id,
+      name: p.name,
+      color: p.color,
+      clue: lastRound[p.token] || null,
+    }));
   } else if (room.phase === "discussion" || room.phase === "voting" || room.phase === "results") {
     clueData = activePlayers.map(p => ({
       id: p.id,
@@ -195,8 +203,7 @@ function checkClueDone(room) {
   if (connected.length > 0 && connected.every(p => room.clues[p.token])) {
     room.cluesHistory.push({ ...room.clues });
     if (room.currentClueRound < room.totalClueRounds) {
-      room.currentClueRound++;
-      room.clues = {};
+      room.phase = "clue-review";
       broadcastViews(room);
     } else {
       room.phase = "discussion";
@@ -320,6 +327,10 @@ io.on("connection", (socket) => {
       room.cluesHistory = [];
       room.currentClueRound = 1;
       room.votes = {};
+    } else if (room.phase === "clue-review") {
+      room.currentClueRound++;
+      room.clues = {};
+      room.phase = "clues";
     } else if (room.phase === "discussion") {
       if (room._discussionTimer) {
         clearTimeout(room._discussionTimer);
@@ -327,7 +338,7 @@ io.on("connection", (socket) => {
       }
       room.phase = "voting";
     } else {
-      return callback?.({ ok: false, error: "Can only advance from reveal or discussion phase." });
+      return callback?.({ ok: false, error: "Can only advance from reveal, clue-review, or discussion phase." });
     }
 
     callback?.({ ok: true });
@@ -414,8 +425,7 @@ io.on("connection", (socket) => {
     }
     room.cluesHistory.push({ ...room.clues });
     if (room.currentClueRound < room.totalClueRounds) {
-      room.currentClueRound++;
-      room.clues = {};
+      room.phase = "clue-review";
     } else {
       room.phase = "voting";
     }

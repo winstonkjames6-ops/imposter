@@ -4,6 +4,7 @@ import Home from "./screens/Home.jsx";
 import Lobby from "./screens/Lobby.jsx";
 import Reveal from "./screens/Reveal.jsx";
 import Clues from "./screens/Clues.jsx";
+import ClueReview from "./screens/ClueReview.jsx";
 import Discussion from "./screens/Discussion.jsx";
 import Voting from "./screens/Voting.jsx";
 import Results from "./screens/Results.jsx";
@@ -53,6 +54,7 @@ export default function App() {
     lobby: <Lobby view={view} onLeave={onLeave} />,
     reveal: <Reveal view={view} onLeave={onLeave} />,
     clues: <Clues view={view} onLeave={onLeave} />,
+    "clue-review": <ClueReview view={view} onLeave={onLeave} />,
     discussion: <Discussion view={view} onLeave={onLeave} />,
     voting: <Voting view={view} onLeave={onLeave} />,
     results: <Results view={view} onLeave={onLeave} />,
