@@ -9,10 +9,10 @@ export default function Lobby({ view, onLeave }) {
   const [packChoice, setPackChoice] = useState('random');
   const [customText, setCustomText] = useState('');
   const [packError, setPackError] = useState(null);
-  const [roundsVal, setRoundsVal] = useState(String(view.totalRounds ?? 3));
+  const [roundsVal, setRoundsVal] = useState(String(view.totalClueRounds ?? 1));
 
   function emitRounds(n) {
-    const clamped = Math.min(10, Math.max(1, n));
+    const clamped = Math.min(3, Math.max(1, n));
     setRoundsVal(String(clamped));
     socket.emit('room:set-rounds', { rounds: clamped });
   }
@@ -271,13 +271,13 @@ export default function Lobby({ view, onLeave }) {
               fontFamily: 'Nunito, sans-serif', fontWeight: 700, fontSize: 10.5,
               letterSpacing: 1, color: 'var(--faint)', marginBottom: 2,
             }}>
-              ROUNDS
+              CLUE ROUNDS
             </div>
             <div style={{
               fontFamily: 'var(--display-font)', fontWeight: 600,
               fontSize: 15, color: 'var(--text)',
             }}>
-              {view.totalRounds ?? 3} {(view.totalRounds ?? 3) === 1 ? 'round' : 'rounds'}
+              {view.totalClueRounds ?? 1} {(view.totalClueRounds ?? 1) === 1 ? 'clue round' : 'clue rounds'}
             </div>
           </div>
           {view.you.isHost && (
@@ -305,7 +305,7 @@ export default function Lobby({ view, onLeave }) {
                   const raw = e.target.value.replace(/[^0-9]/g, '');
                   setRoundsVal(raw);
                   const n = parseInt(raw);
-                  if (!isNaN(n) && n >= 1 && n <= 10) {
+                  if (!isNaN(n) && n >= 1 && n <= 3) {
                     socket.emit('room:set-rounds', { rounds: n });
                   }
                 }}
@@ -322,14 +322,14 @@ export default function Lobby({ view, onLeave }) {
               />
               <button
                 onClick={() => emitRounds(parseInt(roundsVal) + 1)}
-                disabled={parseInt(roundsVal) >= 10}
+                disabled={parseInt(roundsVal) >= 3}
                 style={{
                   width: 34, height: 34, borderRadius: '50%', border: 'none',
                   background: 'var(--surface2)', color: 'var(--muted)',
                   fontFamily: 'var(--display-font)', fontWeight: 700, fontSize: 20,
                   lineHeight: 1, cursor: 'pointer', flexShrink: 0,
                   WebkitTapHighlightColor: 'transparent',
-                  opacity: parseInt(roundsVal) >= 10 ? 0.35 : 1,
+                  opacity: parseInt(roundsVal) >= 3 ? 0.35 : 1,
                 }}
               >
                 +

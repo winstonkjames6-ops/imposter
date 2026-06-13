@@ -52,7 +52,8 @@ function createRoom() {
     hostToken: null,
     players: new Map(),     // token -> Player
     secret: null,           // { word, category, imposterToken } — NEVER sent raw
-    clues: {},              // token -> clue text
+    clues: {},              // token -> clue text (current clue round only)
+    cluesHistory: [],       // [{token -> clue text}, ...] one entry per completed clue round
     votes: {},              // token -> targetId (target's public .id, not auth token)
     autoAccept: false,      // if true, late joiners are queued for next game instead of staying spectators
     autoPending: new Set(), // tokens of spectators to promote when game:reset fires
@@ -61,9 +62,8 @@ function createRoom() {
     _cleanupTimer: null,    // setTimeout handle for empty-room GC
     _discussionTimer: null, // setTimeout handle for discussion countdown
     discussionEndsAt: null, // epoch ms when discussion phase auto-ends
-    totalRounds: 3,         // configurable via room:set-rounds
-    currentRound: 0,        // incremented on game:start and game:next-round
-    scores: new Map(),      // token -> cumulative score across rounds
+    totalClueRounds: 1,     // how many clue rounds per game (1-3), configurable via room:set-rounds
+    currentClueRound: 1,    // which clue round we're on within the current game
   };
   rooms.set(room.code, room);
   return room;
@@ -95,8 +95,9 @@ function buildView(room, player) {
     clueData = activePlayers.map(p => ({
       id: p.id,
       name: p.name,
-      clue: room.clues[p.token] || null,
       color: p.color,
+      // One clue entry per completed round (from history)
+      clues: room.cluesHistory.map(roundClues => roundClues[p.token] || null),
     }));
   }
 
@@ -170,12 +171,8 @@ function buildView(room, player) {
         : null,
 
     youVoted: room.phase === "voting" ? !!room.votes[player.token] : null,
-    currentRound: room.currentRound,
-    totalRounds: room.totalRounds,
-    scores: [...room.players.values()]
-      .filter(p => !p.spectator)
-      .map(p => ({ id: p.id, name: p.name, color: p.color, score: room.scores.get(p.token) ?? 0 }))
-      .sort((a, b) => b.score - a.score),
+    currentClueRound: room.currentClueRound,
+    totalClueRounds: room.totalClueRounds,
   };
 }
 
@@ -196,17 +193,23 @@ function checkClueDone(room) {
   if (room.phase !== "clues") return;
   const connected = [...room.players.values()].filter(p => p.connected && !p.spectator);
   if (connected.length > 0 && connected.every(p => room.clues[p.token])) {
-    room.phase = "discussion";
-    room.discussionEndsAt = Date.now() + 60000;
-    console.log(`[${room.code}] entering discussion phase, ends at ${room.discussionEndsAt}`);
-    broadcastViews(room);
-    room._discussionTimer = setTimeout(() => {
-      if (room.phase === "discussion") {
-        room.phase = "voting";
-        room._discussionTimer = null;
-        broadcastViews(room);
-      }
-    }, 60000);
+    room.cluesHistory.push({ ...room.clues });
+    if (room.currentClueRound < room.totalClueRounds) {
+      room.currentClueRound++;
+      room.clues = {};
+      broadcastViews(room);
+    } else {
+      room.phase = "discussion";
+      room.discussionEndsAt = Date.now() + 60000;
+      broadcastViews(room);
+      room._discussionTimer = setTimeout(() => {
+        if (room.phase === "discussion") {
+          room.phase = "voting";
+          room._discussionTimer = null;
+          broadcastViews(room);
+        }
+      }, 60000);
+    }
   }
 }
 
@@ -215,41 +218,6 @@ function checkVoteDone(room) {
   const connected = [...room.players.values()].filter(p => p.connected && !p.spectator);
   if (connected.length > 0 && connected.every(p => room.votes[p.token] !== undefined)) {
     room.phase = "results";
-    calculateScores(room);
-  }
-}
-
-function calculateScores(room) {
-  if (!room.secret) return;
-  const imposterToken = room.secret.imposterToken;
-  const imposterPlayer = room.players.get(imposterToken);
-  if (!imposterPlayer) return;
-  const imposterId = imposterPlayer.id;
-
-  // Tally votes to determine if imposter was caught
-  const tally = {};
-  for (const targetId of Object.values(room.votes)) {
-    tally[targetId] = (tally[targetId] || 0) + 1;
-  }
-  let maxVotes = 0;
-  let topVotedId = null;
-  for (const [id, count] of Object.entries(tally)) {
-    if (count > maxVotes) { maxVotes = count; topVotedId = id; }
-  }
-  const caught = topVotedId === imposterId && maxVotes > 0;
-
-  for (const player of room.players.values()) {
-    if (player.spectator) continue;
-    if (!room.scores.has(player.token)) room.scores.set(player.token, 0);
-    if (player.token === imposterToken) {
-      // Imposter earns 2 points for getting away, 0 if caught
-      if (!caught) room.scores.set(player.token, room.scores.get(player.token) + 2);
-    } else {
-      // Crew earns 1 point for correctly voting out the imposter
-      if (room.votes[player.token] === imposterId) {
-        room.scores.set(player.token, room.scores.get(player.token) + 1);
-      }
-    }
   }
 }
 
@@ -332,10 +300,6 @@ io.on("connection", (socket) => {
     const activeTokens = [...room.players.values()].filter(p => !p.spectator).map(p => p.token);
     const imposterToken = activeTokens[Math.floor(Math.random() * activeTokens.length)];
 
-    for (const p of room.players.values()) {
-      if (!p.spectator && !room.scores.has(p.token)) room.scores.set(p.token, 0);
-    }
-    room.currentRound += 1;
     room.secret = { word, category, imposterToken };
     room.phase = "reveal";
 
@@ -353,6 +317,8 @@ io.on("connection", (socket) => {
     if (room.phase === "reveal") {
       room.phase = "clues";
       room.clues = {};
+      room.cluesHistory = [];
+      room.currentClueRound = 1;
       room.votes = {};
     } else if (room.phase === "discussion") {
       if (room._discussionTimer) {
@@ -364,52 +330,6 @@ io.on("connection", (socket) => {
       return callback?.({ ok: false, error: "Can only advance from reveal or discussion phase." });
     }
 
-    callback?.({ ok: true });
-    broadcastViews(room);
-  });
-
-  // ---- Host starts the next round (keeps scores, picks new word/imposter) ----
-  socket.on("game:next-round", (_, callback) => {
-    const { room, player } = locate(socket);
-    if (!room) return callback?.({ ok: false, error: "Not in a room." });
-    if (player.token !== room.hostToken)
-      return callback?.({ ok: false, error: "Only the host can advance." });
-    if (room.phase !== "results")
-      return callback?.({ ok: false, error: "Can only start next round from results." });
-    if (room.currentRound >= room.totalRounds)
-      return callback?.({ ok: false, error: "No more rounds." });
-
-    if (room._discussionTimer) { clearTimeout(room._discussionTimer); room._discussionTimer = null; }
-    room.clues = {};
-    room.votes = {};
-    room.secret = null;
-    room.kickVotes = new Map();
-    room.discussionEndsAt = null;
-    room.currentRound += 1;
-
-    for (const p of room.players.values()) {
-      if (!p.spectator && !room.scores.has(p.token)) room.scores.set(p.token, 0);
-    }
-
-    let category, word;
-    if (room.packConfig?.type === 'builtin') {
-      const pack = WORD_PACKS.find(p => p.category === room.packConfig.category)
-                ?? WORD_PACKS[Math.floor(Math.random() * WORD_PACKS.length)];
-      category = pack.category;
-      word = pack.words[Math.floor(Math.random() * pack.words.length)];
-    } else if (room.packConfig?.type === 'custom') {
-      category = 'Custom';
-      word = room.packConfig.words[Math.floor(Math.random() * room.packConfig.words.length)];
-    } else {
-      const pack = WORD_PACKS[Math.floor(Math.random() * WORD_PACKS.length)];
-      category = pack.category;
-      word = pack.words[Math.floor(Math.random() * pack.words.length)];
-    }
-    const activeTokens = [...room.players.values()].filter(p => !p.spectator).map(p => p.token);
-    const imposterToken = activeTokens[Math.floor(Math.random() * activeTokens.length)];
-
-    room.secret = { word, category, imposterToken };
-    room.phase = "reveal";
     callback?.({ ok: true });
     broadcastViews(room);
   });
@@ -492,7 +412,13 @@ io.on("connection", (socket) => {
         room.clues[p.token] = "";
       }
     }
-    room.phase = "voting";
+    room.cluesHistory.push({ ...room.clues });
+    if (room.currentClueRound < room.totalClueRounds) {
+      room.currentClueRound++;
+      room.clues = {};
+    } else {
+      room.phase = "voting";
+    }
     callback?.({ ok: true });
     broadcastViews(room);
   });
@@ -505,6 +431,7 @@ io.on("connection", (socket) => {
       return callback?.({ ok: false, error: "Only the host can restart." });
 
     room.clues = {};
+    room.cluesHistory = [];
     room.votes = {};
     room.secret = null;
     room.phase = "lobby";
@@ -514,8 +441,7 @@ io.on("connection", (socket) => {
       room._discussionTimer = null;
     }
     room.discussionEndsAt = null;
-    room.currentRound = 0;
-    room.scores = new Map();
+    room.currentClueRound = 1;
     for (const token of room.autoPending) {
       const p = room.players.get(token);
       if (p) p.spectator = false;
@@ -611,15 +537,15 @@ io.on("connection", (socket) => {
     broadcastViews(room);
   });
 
-  // ---- Host sets the number of rounds ----
+  // ---- Host sets the number of clue rounds per game ----
   socket.on("room:set-rounds", ({ rounds }, callback) => {
     const { room, player } = locate(socket);
     if (!room) return callback?.({ ok: false, error: "Not in a room." });
     if (player.token !== room.hostToken)
       return callback?.({ ok: false, error: "Only the host can set rounds." });
-    if (![1, 3, 5].includes(rounds))
-      return callback?.({ ok: false, error: "Invalid round count." });
-    room.totalRounds = rounds;
+    if (!Number.isInteger(rounds) || rounds < 1 || rounds > 3)
+      return callback?.({ ok: false, error: "Clue rounds must be 1–3." });
+    room.totalClueRounds = rounds;
     callback?.({ ok: true });
     broadcastViews(room);
   });

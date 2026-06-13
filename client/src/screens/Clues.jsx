@@ -6,7 +6,7 @@ export default function Clues({ view, onLeave }) {
   const [text, setText] = useState("");
   const [error, setError] = useState(null);
   const [menuOpen, setMenuOpen] = useState(false);
-  const { clueData, role, players } = view;
+  const { clueData, role, players, currentClueRound, totalClueRounds } = view;
 
   function submit(e) {
     e.preventDefault();
@@ -22,7 +22,7 @@ export default function Clues({ view, onLeave }) {
       padding: '56px 22px 34px',
     }}>
       <TopBar
-        title="Clue phase"
+        title={totalClueRounds > 1 ? `Clues · Round ${currentClueRound} of ${totalClueRounds}` : 'Clue phase'}
         right={
           <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
             <Chip tone="accent">{role?.category}</Chip>

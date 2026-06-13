@@ -2,17 +2,9 @@ import { useState } from "react";
 import { socket } from "../socket.js";
 import { TopBar, Chip, PlayerBadge, Btn, MenuOverlay, MenuTrigger } from "./ui.jsx";
 
-const RANK_COLORS = ['#E8A838', '#9B9BA8', '#C87533'];
-const RANK_LABELS = ['1st', '2nd', '3rd'];
-
 export default function Results({ view, onLeave }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const { clueData, voteResults, imposterId, role } = view;
-  const currentRound = view.currentRound ?? 1;
-  const totalRounds = view.totalRounds ?? 1;
-  const scores = view.scores ?? [];
-  const isFinalRound = currentRound >= totalRounds;
-  const isMultiRound = totalRounds > 1;
 
   const sortedVotes = voteResults ? [...voteResults].sort((a, b) => b.votes - a.votes) : [];
   const topVoted = sortedVotes[0];
@@ -42,14 +34,8 @@ export default function Results({ view, onLeave }) {
         </div>
       )}
 
-      {/* Round + outcome header */}
+      {/* Outcome header */}
       <div style={{ textAlign: 'center', marginBottom: 16 }}>
-        <div style={{
-          fontFamily: 'Nunito, sans-serif', fontWeight: 800, fontSize: 12.5,
-          letterSpacing: 2, color: 'var(--faint)',
-        }}>
-          ROUND {currentRound} OF {totalRounds}
-        </div>
         <h2 style={{
           fontFamily: 'var(--display-font)', fontWeight: 700, fontSize: 40,
           letterSpacing: -0.5, textTransform: 'uppercase', lineHeight: 0.95,
@@ -99,106 +85,16 @@ export default function Results({ view, onLeave }) {
         </div>
       </div>
 
-      {/* Scrollable section */}
+      {/* Scrollable vote + clue section */}
       <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 16 }} className="no-scrollbar">
-
-        {/* Final standings podium — only on last round of a multi-round game */}
-        {isFinalRound && isMultiRound && scores.length > 0 && (
-          <div style={{
-            background: 'var(--surface)', border: '1px solid var(--border)',
-            borderRadius: 20, padding: '14px 16px', marginBottom: 2,
-          }}>
-            <div style={{
-              fontFamily: 'Nunito, sans-serif', fontWeight: 800, fontSize: 12.5,
-              letterSpacing: 1, color: 'var(--faint)', marginBottom: 12,
-            }}>
-              FINAL STANDINGS
-            </div>
-            {scores.slice(0, 3).map((p, i) => (
-              <div key={p.id} style={{
-                display: 'flex', alignItems: 'center', gap: 12,
-                paddingTop: i > 0 ? 10 : 0, marginTop: i > 0 ? 10 : 0,
-                borderTop: i > 0 ? '1px solid var(--border)' : 'none',
-              }}>
-                <div style={{
-                  width: 32, fontFamily: 'Nunito, sans-serif', fontWeight: 800,
-                  fontSize: 15, color: RANK_COLORS[i] ?? 'var(--faint)',
-                  textAlign: 'center', flexShrink: 0,
-                }}>
-                  {RANK_LABELS[i] ?? `${i + 1}`}
-                </div>
-                <PlayerBadge name={p.name} color={p.color} size={44} />
-                <div style={{
-                  flex: 1, fontFamily: 'var(--display-font)', fontWeight: 600,
-                  fontSize: 16, color: 'var(--text)',
-                }}>
-                  {p.name}
-                  {p.id === view.you.id && (
-                    <span style={{ color: 'var(--faint)', fontSize: 13 }}> (you)</span>
-                  )}
-                </div>
-                <div style={{
-                  fontFamily: 'Nunito, sans-serif', fontWeight: 800, fontSize: 18,
-                  color: RANK_COLORS[i] ?? 'var(--text)',
-                }}>
-                  {p.score} <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--faint)' }}>pts</span>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* Mid-game standings — show between rounds */}
-        {!isFinalRound && isMultiRound && scores.length > 0 && (
-          <div style={{ marginBottom: 2 }}>
-            <div style={{
-              fontFamily: 'Nunito, sans-serif', fontWeight: 800, fontSize: 12.5,
-              letterSpacing: 1, color: 'var(--faint)', marginBottom: 8,
-            }}>
-              STANDINGS AFTER ROUND {currentRound}
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {scores.map((p, i) => (
-                <div key={p.id} style={{
-                  display: 'flex', alignItems: 'center', gap: 12,
-                  background: 'var(--surface)', border: '1px solid var(--border)',
-                  borderRadius: 14, padding: '8px 13px',
-                }}>
-                  <span style={{
-                    width: 20, fontFamily: 'Nunito, sans-serif', fontWeight: 800,
-                    fontSize: 13, color: 'var(--faint)', textAlign: 'center', flexShrink: 0,
-                  }}>
-                    {i + 1}
-                  </span>
-                  <PlayerBadge name={p.name} color={p.color} size={36} />
-                  <span style={{
-                    flex: 1, fontFamily: 'var(--display-font)', fontWeight: 600,
-                    fontSize: 15, color: 'var(--text)',
-                  }}>
-                    {p.name}
-                    {p.id === view.you.id && (
-                      <span style={{ color: 'var(--faint)', fontSize: 12 }}> (you)</span>
-                    )}
-                  </span>
-                  <span style={{
-                    fontFamily: 'Nunito, sans-serif', fontWeight: 800,
-                    fontSize: 16, color: 'var(--text)',
-                  }}>
-                    {p.score} <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--faint)' }}>pts</span>
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Vote tallies + clues */}
         {sortedVotes.map(p => {
-          const clue = clueData?.find(c => c.id === p.id)?.clue;
+          const playerEntry = clueData?.find(c => c.id === p.id);
+          const clues = playerEntry?.clues ?? [];
           const isImposter = p.id === imposterId;
+          const multiRound = clues.length > 1;
           return (
             <div key={p.id} style={{
-              display: 'flex', alignItems: 'center', gap: 13,
+              display: 'flex', alignItems: 'flex-start', gap: 13,
               background: isImposter ? 'rgba(255,77,109,0.1)' : 'var(--surface)',
               border: `1px solid ${isImposter ? 'rgba(255,77,109,0.3)' : 'var(--border)'}`,
               borderRadius: 16, padding: '10px 14px',
@@ -219,20 +115,32 @@ export default function Results({ view, onLeave }) {
                     </span>
                   )}
                 </div>
-                {clue ? (
-                  <div style={{
-                    fontFamily: 'Nunito, sans-serif', fontWeight: 700,
-                    fontSize: 12.5, color: 'var(--faint)',
-                    overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                  }}>
-                    {clue}
-                  </div>
-                ) : (
+                {clues.length === 0 ? (
                   <div style={{
                     fontFamily: 'Nunito, sans-serif', fontWeight: 700,
                     fontSize: 12.5, color: 'var(--faint)', fontStyle: 'italic',
                   }}>
                     no clue
+                  </div>
+                ) : multiRound ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 2, marginTop: 2 }}>
+                    {clues.map((clue, ri) => (
+                      <div key={ri} style={{
+                        fontFamily: 'Nunito, sans-serif', fontSize: 12.5, color: 'var(--faint)',
+                        overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                      }}>
+                        <span style={{ fontWeight: 800, marginRight: 4 }}>R{ri + 1}</span>
+                        <span style={{ fontWeight: 700 }}>{clue || '—'}</span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div style={{
+                    fontFamily: 'Nunito, sans-serif', fontWeight: 700,
+                    fontSize: 12.5, color: 'var(--faint)',
+                    overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                  }}>
+                    {clues[0] || '—'}
                   </div>
                 )}
               </div>
@@ -247,19 +155,13 @@ export default function Results({ view, onLeave }) {
       {/* Footer */}
       <div style={{ paddingTop: 4 }}>
         {view.you.isHost ? (
-          isFinalRound ? (
-            <Btn onClick={() => socket.emit("game:reset")}>Play again</Btn>
-          ) : (
-            <Btn variant="primary" onClick={() => socket.emit("game:next-round")}>
-              Next round · {currentRound + 1} of {totalRounds}
-            </Btn>
-          )
+          <Btn onClick={() => socket.emit("game:reset")}>Play again</Btn>
         ) : (
           <p style={{
             fontFamily: 'Nunito, sans-serif', fontWeight: 700, fontSize: 14,
             color: 'var(--faint)', textAlign: 'center', margin: 0,
           }}>
-            {isFinalRound ? 'Waiting for host to restart…' : 'Waiting for next round…'}
+            Waiting for host to restart…
           </p>
         )}
       </div>
