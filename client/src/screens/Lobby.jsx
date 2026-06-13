@@ -9,6 +9,13 @@ export default function Lobby({ view, onLeave }) {
   const [packChoice, setPackChoice] = useState('random');
   const [customText, setCustomText] = useState('');
   const [packError, setPackError] = useState(null);
+  const [roundsVal, setRoundsVal] = useState(String(view.totalRounds ?? 3));
+
+  function emitRounds(n) {
+    const clamped = Math.min(10, Math.max(1, n));
+    setRoundsVal(String(clamped));
+    socket.emit('room:set-rounds', { rounds: clamped });
+  }
 
   function start() {
     socket.emit("game:start", {}, (res) => {
@@ -274,29 +281,59 @@ export default function Lobby({ view, onLeave }) {
             </div>
           </div>
           {view.you.isHost && (
-            <div style={{
-              display: 'flex', gap: 0, background: 'var(--surface2)',
-              borderRadius: 999, padding: 3,
-            }}>
-              {[1, 3, 5].map(n => {
-                const sel = (view.totalRounds ?? 3) === n;
-                return (
-                  <button
-                    key={n}
-                    onClick={() => socket.emit('room:set-rounds', { rounds: n })}
-                    style={{
-                      padding: '4px 14px', borderRadius: 999, border: 'none',
-                      background: sel ? 'var(--accent)' : 'transparent',
-                      color: sel ? '#fff' : 'var(--muted)',
-                      fontFamily: 'var(--display-font)', fontWeight: 700, fontSize: 14,
-                      cursor: 'pointer', WebkitTapHighlightColor: 'transparent',
-                      transition: 'background .12s, color .12s',
-                    }}
-                  >
-                    {n}
-                  </button>
-                );
-              })}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+              <button
+                onClick={() => emitRounds(parseInt(roundsVal) - 1)}
+                disabled={parseInt(roundsVal) <= 1}
+                style={{
+                  width: 34, height: 34, borderRadius: '50%', border: 'none',
+                  background: 'var(--surface2)', color: 'var(--muted)',
+                  fontFamily: 'var(--display-font)', fontWeight: 700, fontSize: 20,
+                  lineHeight: 1, cursor: 'pointer', flexShrink: 0,
+                  WebkitTapHighlightColor: 'transparent',
+                  opacity: parseInt(roundsVal) <= 1 ? 0.35 : 1,
+                }}
+              >
+                −
+              </button>
+              <input
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                value={roundsVal}
+                onChange={e => {
+                  const raw = e.target.value.replace(/[^0-9]/g, '');
+                  setRoundsVal(raw);
+                  const n = parseInt(raw);
+                  if (!isNaN(n) && n >= 1 && n <= 10) {
+                    socket.emit('room:set-rounds', { rounds: n });
+                  }
+                }}
+                onBlur={() => {
+                  const n = parseInt(roundsVal);
+                  emitRounds(isNaN(n) ? 3 : n);
+                }}
+                style={{
+                  width: 42, textAlign: 'center', border: '1px solid var(--border)',
+                  borderRadius: 10, background: 'var(--surface2)',
+                  fontFamily: 'var(--display-font)', fontWeight: 700, fontSize: 17,
+                  color: 'var(--text)', padding: '4px 0', outline: 'none',
+                }}
+              />
+              <button
+                onClick={() => emitRounds(parseInt(roundsVal) + 1)}
+                disabled={parseInt(roundsVal) >= 10}
+                style={{
+                  width: 34, height: 34, borderRadius: '50%', border: 'none',
+                  background: 'var(--surface2)', color: 'var(--muted)',
+                  fontFamily: 'var(--display-font)', fontWeight: 700, fontSize: 20,
+                  lineHeight: 1, cursor: 'pointer', flexShrink: 0,
+                  WebkitTapHighlightColor: 'transparent',
+                  opacity: parseInt(roundsVal) >= 10 ? 0.35 : 1,
+                }}
+              >
+                +
+              </button>
             </div>
           )}
         </div>
