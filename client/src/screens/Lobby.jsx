@@ -253,6 +253,54 @@ export default function Lobby({ view, onLeave }) {
           )}
         </div>
 
+        {/* Rounds row */}
+        <div style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          background: 'var(--surface)', border: '1px solid var(--border)',
+          borderRadius: 16, padding: '11px 14px', marginBottom: 14,
+        }}>
+          <div>
+            <div style={{
+              fontFamily: 'Nunito, sans-serif', fontWeight: 700, fontSize: 10.5,
+              letterSpacing: 1, color: 'var(--faint)', marginBottom: 2,
+            }}>
+              ROUNDS
+            </div>
+            <div style={{
+              fontFamily: 'var(--display-font)', fontWeight: 600,
+              fontSize: 15, color: 'var(--text)',
+            }}>
+              {view.totalRounds ?? 3} {(view.totalRounds ?? 3) === 1 ? 'round' : 'rounds'}
+            </div>
+          </div>
+          {view.you.isHost && (
+            <div style={{
+              display: 'flex', gap: 0, background: 'var(--surface2)',
+              borderRadius: 999, padding: 3,
+            }}>
+              {[1, 3, 5].map(n => {
+                const sel = (view.totalRounds ?? 3) === n;
+                return (
+                  <button
+                    key={n}
+                    onClick={() => socket.emit('room:set-rounds', { rounds: n })}
+                    style={{
+                      padding: '4px 14px', borderRadius: 999, border: 'none',
+                      background: sel ? 'var(--accent)' : 'transparent',
+                      color: sel ? '#fff' : 'var(--muted)',
+                      fontFamily: 'var(--display-font)', fontWeight: 700, fontSize: 14,
+                      cursor: 'pointer', WebkitTapHighlightColor: 'transparent',
+                      transition: 'background .12s, color .12s',
+                    }}
+                  >
+                    {n}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
         {view.you.isHost && (
           <div style={{
             display: 'flex', alignItems: 'center', justifyContent: 'space-between',
