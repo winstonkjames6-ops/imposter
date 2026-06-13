@@ -59,6 +59,8 @@ function createRoom() {
     kickVotes: new Map(),   // targetToken -> Set<voterToken>
     packConfig: null,       // null = random | { type:'builtin', category } | { type:'custom', words[] }
     _cleanupTimer: null,    // setTimeout handle for empty-room GC
+    _discussionTimer: null, // setTimeout handle for discussion countdown
+    discussionEndsAt: null, // epoch ms when discussion phase auto-ends
   };
   rooms.set(room.code, room);
   return room;
@@ -86,7 +88,7 @@ function buildView(room, player) {
       total: connectedActive.length,
       youSubmitted: !!room.clues[player.token],
     };
-  } else if (room.phase === "voting" || room.phase === "results") {
+  } else if (room.phase === "discussion" || room.phase === "voting" || room.phase === "results") {
     clueData = activePlayers.map(p => ({
       id: p.id,
       name: p.name,
@@ -151,6 +153,7 @@ function buildView(room, player) {
 
     clueData,
     voteResults,
+    discussionEndsAt: room.phase === "discussion" ? room.discussionEndsAt : null,
     autoAccept: room.autoAccept,
     packName: room.packConfig == null
       ? 'Random'
@@ -184,7 +187,15 @@ function checkClueDone(room) {
   if (room.phase !== "clues") return;
   const connected = [...room.players.values()].filter(p => p.connected && !p.spectator);
   if (connected.length > 0 && connected.every(p => room.clues[p.token])) {
-    room.phase = "voting";
+    room.phase = "discussion";
+    room.discussionEndsAt = Date.now() + 60000;
+    room._discussionTimer = setTimeout(() => {
+      if (room.phase === "discussion") {
+        room.phase = "voting";
+        room._discussionTimer = null;
+        broadcastViews(room);
+      }
+    }, 60000);
   }
 }
 
@@ -282,18 +293,27 @@ io.on("connection", (socket) => {
     broadcastViews(room);
   });
 
-  // ---- Host advances reveal → clues ----
+  // ---- Host advances reveal → clues, or skips discussion → voting ----
   socket.on("game:advance", (_, callback) => {
     const { room, player } = locate(socket);
     if (!room) return callback?.({ ok: false, error: "Not in a room." });
     if (player.token !== room.hostToken)
       return callback?.({ ok: false, error: "Only the host can advance." });
-    if (room.phase !== "reveal")
-      return callback?.({ ok: false, error: "Can only advance from reveal phase." });
 
-    room.phase = "clues";
-    room.clues = {};
-    room.votes = {};
+    if (room.phase === "reveal") {
+      room.phase = "clues";
+      room.clues = {};
+      room.votes = {};
+    } else if (room.phase === "discussion") {
+      if (room._discussionTimer) {
+        clearTimeout(room._discussionTimer);
+        room._discussionTimer = null;
+      }
+      room.phase = "voting";
+    } else {
+      return callback?.({ ok: false, error: "Can only advance from reveal or discussion phase." });
+    }
+
     callback?.({ ok: true });
     broadcastViews(room);
   });
@@ -393,6 +413,11 @@ io.on("connection", (socket) => {
     room.secret = null;
     room.phase = "lobby";
     room.kickVotes = new Map();
+    if (room._discussionTimer) {
+      clearTimeout(room._discussionTimer);
+      room._discussionTimer = null;
+    }
+    room.discussionEndsAt = null;
     for (const token of room.autoPending) {
       const p = room.players.get(token);
       if (p) p.spectator = false;
