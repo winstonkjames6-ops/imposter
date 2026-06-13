@@ -10,11 +10,18 @@ export default function Lobby({ view, onLeave }) {
   const [customText, setCustomText] = useState('');
   const [packError, setPackError] = useState(null);
   const [roundsVal, setRoundsVal] = useState(String(view.totalClueRounds ?? 1));
+  const [discussVal, setDiscussVal] = useState(String(view.discussionTime ?? 60));
 
   function emitRounds(n) {
     const clamped = Math.min(3, Math.max(1, n));
     setRoundsVal(String(clamped));
     socket.emit('room:set-rounds', { rounds: clamped });
+  }
+
+  function emitDiscussion(n) {
+    const clamped = Math.min(300, Math.max(10, n));
+    setDiscussVal(String(clamped));
+    socket.emit('room:set-discussion-time', { seconds: clamped });
   }
 
   function start() {
@@ -330,6 +337,84 @@ export default function Lobby({ view, onLeave }) {
                   lineHeight: 1, cursor: 'pointer', flexShrink: 0,
                   WebkitTapHighlightColor: 'transparent',
                   opacity: parseInt(roundsVal) >= 3 ? 0.35 : 1,
+                }}
+              >
+                +
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* Discussion timer row */}
+        <div style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          background: 'var(--surface)', border: '1px solid var(--border)',
+          borderRadius: 16, padding: '11px 14px', marginBottom: 14,
+        }}>
+          <div>
+            <div style={{
+              fontFamily: 'Nunito, sans-serif', fontWeight: 700, fontSize: 10.5,
+              letterSpacing: 1, color: 'var(--faint)', marginBottom: 2,
+            }}>
+              DISCUSS TIME
+            </div>
+            <div style={{
+              fontFamily: 'var(--display-font)', fontWeight: 600,
+              fontSize: 15, color: 'var(--text)',
+            }}>
+              {view.discussionTime ?? 60}s
+            </div>
+          </div>
+          {view.you.isHost && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+              <button
+                onClick={() => emitDiscussion(parseInt(discussVal) - 10)}
+                disabled={parseInt(discussVal) <= 10}
+                style={{
+                  width: 34, height: 34, borderRadius: '50%', border: 'none',
+                  background: 'var(--surface2)', color: 'var(--muted)',
+                  fontFamily: 'var(--display-font)', fontWeight: 700, fontSize: 20,
+                  lineHeight: 1, cursor: 'pointer', flexShrink: 0,
+                  WebkitTapHighlightColor: 'transparent',
+                  opacity: parseInt(discussVal) <= 10 ? 0.35 : 1,
+                }}
+              >
+                −
+              </button>
+              <input
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                value={discussVal}
+                onChange={e => {
+                  const raw = e.target.value.replace(/[^0-9]/g, '');
+                  setDiscussVal(raw);
+                  const n = parseInt(raw);
+                  if (!isNaN(n) && n >= 10 && n <= 300) {
+                    socket.emit('room:set-discussion-time', { seconds: n });
+                  }
+                }}
+                onBlur={() => {
+                  const n = parseInt(discussVal);
+                  emitDiscussion(isNaN(n) ? 60 : n);
+                }}
+                style={{
+                  width: 48, textAlign: 'center', border: '1px solid var(--border)',
+                  borderRadius: 10, background: 'var(--surface2)',
+                  fontFamily: 'var(--display-font)', fontWeight: 700, fontSize: 17,
+                  color: 'var(--text)', padding: '4px 0', outline: 'none',
+                }}
+              />
+              <button
+                onClick={() => emitDiscussion(parseInt(discussVal) + 10)}
+                disabled={parseInt(discussVal) >= 300}
+                style={{
+                  width: 34, height: 34, borderRadius: '50%', border: 'none',
+                  background: 'var(--surface2)', color: 'var(--muted)',
+                  fontFamily: 'var(--display-font)', fontWeight: 700, fontSize: 20,
+                  lineHeight: 1, cursor: 'pointer', flexShrink: 0,
+                  WebkitTapHighlightColor: 'transparent',
+                  opacity: parseInt(discussVal) >= 300 ? 0.35 : 1,
                 }}
               >
                 +

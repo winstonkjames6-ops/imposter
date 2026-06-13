@@ -64,6 +64,7 @@ function createRoom() {
     discussionEndsAt: null, // epoch ms when discussion phase auto-ends
     totalClueRounds: 1,     // how many clue rounds per game (1-3), configurable via room:set-rounds
     currentClueRound: 1,    // which clue round we're on within the current game
+    discussionDuration: 60000, // ms; configurable via room:set-discussion-time
   };
   rooms.set(room.code, room);
   return room;
@@ -180,6 +181,7 @@ function buildView(room, player) {
     youVoted: room.phase === "voting" ? !!room.votes[player.token] : null,
     currentClueRound: room.currentClueRound,
     totalClueRounds: room.totalClueRounds,
+    discussionTime: room.discussionDuration / 1000,
     // All completed clue rounds with player data merged in — used by ClueReview and Discussion
     allClues: room.allClues.map(({ round, clues }) => ({
       round,
@@ -216,7 +218,7 @@ function checkClueDone(room) {
       broadcastViews(room);
     } else {
       room.phase = "discussion";
-      room.discussionEndsAt = Date.now() + 60000;
+      room.discussionEndsAt = Date.now() + room.discussionDuration;
       broadcastViews(room);
       room._discussionTimer = setTimeout(() => {
         if (room.phase === "discussion") {
@@ -224,7 +226,7 @@ function checkClueDone(room) {
           room._discussionTimer = null;
           broadcastViews(room);
         }
-      }, 60000);
+      }, room.discussionDuration);
     }
   }
 }
@@ -565,6 +567,18 @@ io.on("connection", (socket) => {
     if (!Number.isInteger(rounds) || rounds < 1 || rounds > 3)
       return callback?.({ ok: false, error: "Clue rounds must be 1–3." });
     room.totalClueRounds = rounds;
+    callback?.({ ok: true });
+    broadcastViews(room);
+  });
+
+  // ---- Host sets the discussion timer ----
+  socket.on("room:set-discussion-time", ({ seconds }, callback) => {
+    const { room, player } = locate(socket);
+    if (!room) return callback?.({ ok: false, error: "Not in a room." });
+    if (player.token !== room.hostToken)
+      return callback?.({ ok: false, error: "Only the host can set the discussion time." });
+    const n = Number(seconds);
+    room.discussionDuration = (Number.isFinite(n) && n >= 10 && n <= 300 ? Math.round(n) : 60) * 1000;
     callback?.({ ok: true });
     broadcastViews(room);
   });
