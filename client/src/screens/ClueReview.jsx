@@ -4,7 +4,10 @@ import { Btn, TopBar, PlayerBadge, MenuOverlay, MenuTrigger } from "./ui.jsx";
 
 export default function ClueReview({ view, onLeave }) {
   const [menuOpen, setMenuOpen] = useState(false);
-  const { clueData, currentClueRound, totalClueRounds } = view;
+  const { allClues, currentClueRound, totalClueRounds } = view;
+
+  const lastRound = allClues[allClues.length - 1];
+  const entries = lastRound?.entries ?? [];
 
   return (
     <div style={{
@@ -40,7 +43,7 @@ export default function ClueReview({ view, onLeave }) {
         flex: 1, overflowY: 'auto',
         display: 'flex', flexDirection: 'column', gap: 10,
       }} className="no-scrollbar">
-        {(clueData ?? []).map((p, i) => (
+        {entries.map((p, i) => (
           <div key={p.id ?? i} style={{
             display: 'flex', alignItems: 'center', gap: 12,
             background: 'var(--surface)', border: '1px solid var(--border)',

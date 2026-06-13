@@ -4,7 +4,7 @@ import { Btn, TopBar, PlayerBadge, MenuOverlay, MenuTrigger } from "./ui.jsx";
 
 export default function Discussion({ view, onLeave }) {
   const [menuOpen, setMenuOpen] = useState(false);
-  const { clueData, discussionEndsAt } = view;
+  const { allClues, discussionEndsAt } = view;
 
   const [secondsLeft, setSecondsLeft] = useState(() =>
     Math.max(0, Math.ceil((discussionEndsAt - Date.now()) / 1000))
@@ -20,6 +20,7 @@ export default function Discussion({ view, onLeave }) {
   }, [discussionEndsAt]);
 
   const timerColor = secondsLeft <= 10 ? 'var(--red)' : secondsLeft <= 20 ? '#E8A838' : 'var(--text)';
+  const multiRound = (allClues?.length ?? 0) > 1;
 
   return (
     <div style={{
@@ -57,47 +58,52 @@ export default function Discussion({ view, onLeave }) {
         </div>
       </div>
 
-      {/* Clue list */}
-      <div style={{
-        fontFamily: 'Nunito, sans-serif', fontWeight: 800, fontSize: 12.5,
-        letterSpacing: 1, color: 'var(--faint)', marginBottom: 10,
-      }}>
-        CLUES SUBMITTED
-      </div>
-
-      <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 10 }} className="no-scrollbar">
-        {clueData?.map(entry => (
-          <div key={entry.id} style={{
-            display: 'flex', alignItems: 'center', gap: 12,
-            background: 'var(--surface)', border: '1px solid var(--border)',
-            borderRadius: 16, padding: '10px 14px',
-          }}>
-            <PlayerBadge name={entry.name} color={entry.color} size={44} />
-            <div style={{ flex: 1 }}>
-              <div style={{
-                fontFamily: 'var(--display-font)', fontWeight: 600,
-                fontSize: 16, color: 'var(--text)',
-              }}>
-                {entry.name}
-                {entry.id === view.you.id && (
-                  <span style={{ color: 'var(--faint)', fontSize: 13 }}> (you)</span>
-                )}
-              </div>
-              {entry.clue ? (
-                <div style={{
-                  fontFamily: 'Nunito, sans-serif', fontWeight: 700,
-                  fontSize: 13.5, color: 'var(--muted)', marginTop: 2,
+      {/* Clue list — grouped by round when multiple rounds exist */}
+      <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 14 }} className="no-scrollbar">
+        {(allClues ?? []).map(({ round, entries }) => (
+          <div key={round}>
+            <div style={{
+              fontFamily: 'Nunito, sans-serif', fontWeight: 800, fontSize: 12.5,
+              letterSpacing: 1, color: 'var(--faint)', marginBottom: 8,
+            }}>
+              {multiRound ? `ROUND ${round} CLUES` : 'CLUES SUBMITTED'}
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {entries.map(entry => (
+                <div key={entry.id} style={{
+                  display: 'flex', alignItems: 'center', gap: 12,
+                  background: 'var(--surface)', border: '1px solid var(--border)',
+                  borderRadius: 16, padding: '10px 14px',
                 }}>
-                  clue: <span style={{ color: 'var(--accent2)' }}>{entry.clue}</span>
+                  <PlayerBadge name={entry.name} color={entry.color} size={44} />
+                  <div style={{ flex: 1 }}>
+                    <div style={{
+                      fontFamily: 'var(--display-font)', fontWeight: 600,
+                      fontSize: 16, color: 'var(--text)',
+                    }}>
+                      {entry.name}
+                      {entry.id === view.you.id && (
+                        <span style={{ color: 'var(--faint)', fontSize: 13 }}> (you)</span>
+                      )}
+                    </div>
+                    {entry.clue ? (
+                      <div style={{
+                        fontFamily: 'Nunito, sans-serif', fontWeight: 700,
+                        fontSize: 13.5, color: 'var(--muted)', marginTop: 2,
+                      }}>
+                        clue: <span style={{ color: 'var(--accent2)' }}>{entry.clue}</span>
+                      </div>
+                    ) : (
+                      <div style={{
+                        fontFamily: 'Nunito, sans-serif', fontWeight: 700,
+                        fontSize: 13.5, color: 'var(--faint)', marginTop: 2, fontStyle: 'italic',
+                      }}>
+                        no clue submitted
+                      </div>
+                    )}
+                  </div>
                 </div>
-              ) : (
-                <div style={{
-                  fontFamily: 'Nunito, sans-serif', fontWeight: 700,
-                  fontSize: 13.5, color: 'var(--faint)', marginTop: 2, fontStyle: 'italic',
-                }}>
-                  no clue submitted
-                </div>
-              )}
+              ))}
             </div>
           </div>
         ))}

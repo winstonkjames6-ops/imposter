@@ -53,7 +53,7 @@ function createRoom() {
     players: new Map(),     // token -> Player
     secret: null,           // { word, category, imposterToken } — NEVER sent raw
     clues: {},              // token -> clue text (current clue round only)
-    cluesHistory: [],       // [{token -> clue text}, ...] one entry per completed clue round
+    allClues: [],           // [{ round: N, clues: { token -> text } }, ...] one entry per completed round
     votes: {},              // token -> targetId (target's public .id, not auth token)
     autoAccept: false,      // if true, late joiners are queued for next game instead of staying spectators
     autoPending: new Set(), // tokens of spectators to promote when game:reset fires
@@ -92,20 +92,19 @@ function buildView(room, player) {
       youSubmitted: !!room.clues[player.token],
     };
   } else if (room.phase === "clue-review") {
-    const lastRound = room.cluesHistory[room.cluesHistory.length - 1] ?? {};
+    const lastEntry = room.allClues[room.allClues.length - 1];
     clueData = activePlayers.map(p => ({
       id: p.id,
       name: p.name,
       color: p.color,
-      clue: lastRound[p.token] || null,
+      clue: lastEntry?.clues[p.token] || null,
     }));
   } else if (room.phase === "discussion" || room.phase === "voting" || room.phase === "results") {
     clueData = activePlayers.map(p => ({
       id: p.id,
       name: p.name,
       color: p.color,
-      // One clue entry per completed round (from history)
-      clues: room.cluesHistory.map(roundClues => roundClues[p.token] || null),
+      clues: room.allClues.map(entry => entry.clues[p.token] || null),
     }));
   }
 
@@ -181,6 +180,16 @@ function buildView(room, player) {
     youVoted: room.phase === "voting" ? !!room.votes[player.token] : null,
     currentClueRound: room.currentClueRound,
     totalClueRounds: room.totalClueRounds,
+    // All completed clue rounds with player data merged in — used by ClueReview and Discussion
+    allClues: room.allClues.map(({ round, clues }) => ({
+      round,
+      entries: activePlayers.map(p => ({
+        id: p.id,
+        name: p.name,
+        color: p.color,
+        clue: clues[p.token] || null,
+      })),
+    })),
   };
 }
 
@@ -201,7 +210,7 @@ function checkClueDone(room) {
   if (room.phase !== "clues") return;
   const connected = [...room.players.values()].filter(p => p.connected && !p.spectator);
   if (connected.length > 0 && connected.every(p => room.clues[p.token])) {
-    room.cluesHistory.push({ ...room.clues });
+    room.allClues.push({ round: room.currentClueRound, clues: { ...room.clues } });
     if (room.currentClueRound < room.totalClueRounds) {
       room.phase = "clue-review";
       broadcastViews(room);
@@ -324,7 +333,7 @@ io.on("connection", (socket) => {
     if (room.phase === "reveal") {
       room.phase = "clues";
       room.clues = {};
-      room.cluesHistory = [];
+      room.allClues = [];
       room.currentClueRound = 1;
       room.votes = {};
     } else if (room.phase === "clue-review") {
@@ -423,7 +432,7 @@ io.on("connection", (socket) => {
         room.clues[p.token] = "";
       }
     }
-    room.cluesHistory.push({ ...room.clues });
+    room.allClues.push({ round: room.currentClueRound, clues: { ...room.clues } });
     if (room.currentClueRound < room.totalClueRounds) {
       room.phase = "clue-review";
     } else {
@@ -441,7 +450,7 @@ io.on("connection", (socket) => {
       return callback?.({ ok: false, error: "Only the host can restart." });
 
     room.clues = {};
-    room.cluesHistory = [];
+    room.allClues = [];
     room.votes = {};
     room.secret = null;
     room.phase = "lobby";
