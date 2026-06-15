@@ -342,6 +342,7 @@ export function MenuTrigger({ onClick }) {
 export function MenuOverlay({ isOpen, onClose, isHost, onRestart, onLeave, players = [], myId }) {
   const [sub, setSub] = useState(null);
   const [toast, setToast] = useState(null);
+  const [kicked, setKicked] = useState(false);
   const toastTimer = useRef(null);
 
   useEffect(() => {
@@ -353,7 +354,7 @@ export function MenuOverlay({ isOpen, onClose, isHost, onRestart, onLeave, playe
     function onKickResult({ name, kickedId }) {
       if (kickedId === myId) {
         clearSeat();
-        onLeave();
+        setKicked(true);
         return;
       }
       if (toastTimer.current) clearTimeout(toastTimer.current);
@@ -363,6 +364,52 @@ export function MenuOverlay({ isOpen, onClose, isHost, onRestart, onLeave, playe
     socket.on('kick:result', onKickResult);
     return () => socket.off('kick:result', onKickResult);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  if (kicked) {
+    return (
+      <div style={{
+        position: 'fixed', inset: 0, zIndex: 600,
+        background: 'rgba(0,0,0,0.88)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        padding: '0 28px',
+      }}>
+        <div style={{
+          background: 'var(--paper)', borderRadius: 24,
+          padding: '36px 28px 28px',
+          width: '100%', maxWidth: 360,
+          textAlign: 'center',
+          boxShadow: '0 24px 60px rgba(0,0,0,0.6)',
+        }}>
+          <div style={{
+            width: 56, height: 56, borderRadius: '50%',
+            background: 'rgba(255,77,109,0.15)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            margin: '0 auto 20px',
+          }}>
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" style={{ color: '#FF4D6D' }}>
+              <circle cx="10" cy="8" r="3.4" stroke="currentColor" strokeWidth="1.8"/>
+              <path d="M4 19c0-3.3 2.7-5.5 6-5.5 1.2 0 2.3.3 3.2.8M16 10l5 5m0-5l-5 5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
+            </svg>
+          </div>
+          <p style={{
+            margin: '0 0 8px',
+            fontFamily: 'var(--display-font, inherit)', fontWeight: 700,
+            fontSize: 20, color: 'var(--ink)', lineHeight: 1.25,
+          }}>
+            Removed from game
+          </p>
+          <p style={{
+            margin: '0 0 28px',
+            fontFamily: 'Nunito, sans-serif', fontWeight: 500,
+            fontSize: 15, color: 'var(--muted)', lineHeight: 1.5,
+          }}>
+            You've been removed from the game by the host.
+          </p>
+          <Btn onClick={onLeave}>Return to Home</Btn>
+        </div>
+      </div>
+    );
+  }
 
   const toastEl = toast ? (
     <div style={{
