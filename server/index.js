@@ -650,9 +650,9 @@ io.on("connection", (socket) => {
     player.connected = false;
     player.socketId = null;
 
-    // Host migration: promote the first still-connected player.
+    // Host migration: promote the first still-connected non-spectator.
     if (player.token === room.hostToken) {
-      const nextHost = [...room.players.values()].find(p => p.connected);
+      const nextHost = [...room.players.values()].find(p => p.connected && !p.spectator);
       if (nextHost) room.hostToken = nextHost.token;
     }
 
