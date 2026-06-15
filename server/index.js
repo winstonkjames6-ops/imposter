@@ -136,6 +136,7 @@ function buildView(room, player) {
       id: player.id,
       isHost: player.token === room.hostToken,
       isSpectator: !!player.spectator,
+      isImposter: !!(room.secret && player.token === room.secret.imposterToken),
     },
     players: [...room.players.values()].map(p => ({
       id: p.id,
@@ -181,6 +182,18 @@ function buildView(room, player) {
         : null,
 
     lastChanceResult: room.phase === "results" ? room.lastChanceResult : null,
+
+    result: room.phase === "results" ? {
+      caught: (() => {
+        const tally = {};
+        for (const votedId of Object.values(room.votes)) {
+          tally[votedId] = (tally[votedId] || 0) + 1;
+        }
+        const imposterPublicId = room.players.get(room.secret.imposterToken)?.id;
+        const topVotedId = Object.entries(tally).sort((a, b) => b[1] - a[1])[0]?.[0];
+        return topVotedId === imposterPublicId;
+      })(),
+    } : null,
 
     youVoted: room.phase === "voting" ? !!room.votes[player.token] : null,
     currentClueRound: room.currentClueRound,

@@ -9,8 +9,7 @@ export default function Results({ view, onLeave }) {
   const { clueData, voteResults, imposterId, role, lastChanceResult } = view;
 
   const sortedVotes = voteResults ? [...voteResults].sort((a, b) => b.votes - a.votes) : [];
-  const topVoted = sortedVotes[0];
-  const caughtRight = topVoted?.id === imposterId;
+  const caughtRight = view.result?.caught === true;
   const imposterEntry = voteResults?.find(p => p.id === imposterId);
   const imposterName = imposterEntry?.name ?? 'Unknown';
   const imposterColor = imposterEntry?.color;
@@ -21,7 +20,7 @@ export default function Results({ view, onLeave }) {
     socket.emit('imposter:guess', { word: guess.trim() });
   }
 
-  const showGuessSection = view.you.id === imposterId && caughtRight && !lastChanceResult && !guessSubmitted;
+  const showGuessSection = view.you.isImposter === true && view.result?.caught === true && !lastChanceResult && !guessSubmitted;
 
   return (
     <div style={{
