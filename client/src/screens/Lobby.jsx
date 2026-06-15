@@ -443,38 +443,6 @@ export default function Lobby({ view, onLeave }) {
               </label>
             </div>
 
-            {/* Vote kick toggle */}
-            <div style={{
-              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-              paddingBottom: 12, marginBottom: 12, borderBottom: '1px solid var(--border)',
-            }}>
-              <span style={{
-                fontFamily: 'Nunito, sans-serif', fontWeight: 700,
-                fontSize: 14, color: 'var(--muted)',
-              }}>
-                Vote kick enabled
-              </span>
-              <label style={{ position: 'relative', display: 'inline-block', width: 48, height: 27, cursor: 'pointer', flexShrink: 0 }}>
-                <input
-                  type="checkbox"
-                  checked={!!view.voteKickEnabled}
-                  onChange={e => socket.emit('room:set-vote-kick', { value: e.target.checked })}
-                  style={{ opacity: 0, width: 0, height: 0, position: 'absolute' }}
-                />
-                <span style={{
-                  position: 'absolute', inset: 0, borderRadius: 27,
-                  background: view.voteKickEnabled ? 'var(--accent)' : 'var(--border)',
-                  transition: 'background .15s',
-                }} />
-                <span style={{
-                  position: 'absolute', top: 3,
-                  left: view.voteKickEnabled ? 'calc(100% - 24px)' : 3,
-                  width: 21, height: 21, borderRadius: '50%', background: '#fff',
-                  transition: 'left .15s', boxShadow: '0 1px 4px rgba(0,0,0,0.25)',
-                }} />
-              </label>
-            </div>
-
             {/* Kick player */}
             {(() => {
               const kickable = view.players.filter(p => !p.isHost && p.connected);
