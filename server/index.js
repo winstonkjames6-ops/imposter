@@ -66,6 +66,7 @@ function createRoom() {
     currentClueRound: 1,    // which clue round we're on within the current game
     discussionDuration: 60000, // ms; configurable via room:set-discussion-time
     lastActivity: Date.now(),
+    lastChanceResult: null, // 'escaped' | 'failed' | null
   };
   rooms.set(room.code, room);
   return room;
@@ -178,6 +179,8 @@ function buildView(room, player) {
       room.phase === "results"
         ? (room.players.get(room.secret.imposterToken)?.id ?? null)
         : null,
+
+    lastChanceResult: room.phase === "results" ? room.lastChanceResult : null,
 
     youVoted: room.phase === "voting" ? !!room.votes[player.token] : null,
     currentClueRound: room.currentClueRound,
@@ -459,6 +462,7 @@ io.on("connection", (socket) => {
     room.secret = null;
     room.phase = "lobby";
     room.kickVotes = new Map();
+    room.lastChanceResult = null;
     if (room._discussionTimer) {
       clearTimeout(room._discussionTimer);
       room._discussionTimer = null;
@@ -593,6 +597,35 @@ io.on("connection", (socket) => {
       return callback?.({ ok: false, error: "Only the host can change this setting." });
     room.autoAccept = !!value;
     callback?.({ ok: true });
+    broadcastViews(room);
+  });
+
+  // ---- Imposter last-chance guess ----
+  socket.on("imposter:guess", ({ word }, callback) => {
+    const { room, player } = locate(socket);
+    if (!room) return callback?.({ ok: false, error: "Not in a room." });
+    if (room.phase !== "results") return callback?.({ ok: false, error: "Not in results phase." });
+    if (!room.secret) return callback?.({ ok: false, error: "No active game." });
+    if (player.token !== room.secret.imposterToken) return callback?.({ ok: false, error: "You are not the imposter." });
+    if (room.lastChanceResult) return callback?.({ ok: false, error: "Already guessed." });
+
+    // Verify the imposter was actually caught (top vote-getter is the imposter).
+    const tally = {};
+    for (const votedId of Object.values(room.votes)) {
+      tally[votedId] = (tally[votedId] || 0) + 1;
+    }
+    const imposterPublicId = room.players.get(room.secret.imposterToken)?.id;
+    const topVotedId = Object.entries(tally).sort((a, b) => b[1] - a[1])[0]?.[0];
+    if (topVotedId !== imposterPublicId) return callback?.({ ok: false, error: "You were not caught." });
+
+    const trimmed = (word || "").trim();
+    if (!trimmed) return callback?.({ ok: false, error: "Guess cannot be empty." });
+
+    room.lastChanceResult = trimmed.toLowerCase() === room.secret.word.toLowerCase()
+      ? 'escaped'
+      : 'failed';
+
+    callback?.({ ok: true, result: room.lastChanceResult });
     broadcastViews(room);
   });
 

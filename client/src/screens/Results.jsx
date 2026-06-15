@@ -4,7 +4,9 @@ import { TopBar, Chip, PlayerBadge, Btn, MenuOverlay, MenuTrigger } from "./ui.j
 
 export default function Results({ view, onLeave }) {
   const [menuOpen, setMenuOpen] = useState(false);
-  const { clueData, voteResults, imposterId, role } = view;
+  const [guess, setGuess] = useState('');
+  const [guessSubmitted, setGuessSubmitted] = useState(false);
+  const { clueData, voteResults, imposterId, role, lastChanceResult } = view;
 
   const sortedVotes = voteResults ? [...voteResults].sort((a, b) => b.votes - a.votes) : [];
   const topVoted = sortedVotes[0];
@@ -12,6 +14,14 @@ export default function Results({ view, onLeave }) {
   const imposterEntry = voteResults?.find(p => p.id === imposterId);
   const imposterName = imposterEntry?.name ?? 'Unknown';
   const imposterColor = imposterEntry?.color;
+
+  function submitGuess() {
+    if (!guess.trim()) return;
+    setGuessSubmitted(true);
+    socket.emit('imposter:guess', { word: guess.trim() });
+  }
+
+  const showGuessSection = role?.isImposter && caughtRight && !lastChanceResult && !guessSubmitted;
 
   return (
     <div style={{
@@ -39,10 +49,12 @@ export default function Results({ view, onLeave }) {
         <h2 style={{
           fontFamily: 'var(--display-font)', fontWeight: 700, fontSize: 40,
           letterSpacing: -0.5, textTransform: 'uppercase', lineHeight: 0.95,
-          color: caughtRight ? 'var(--green)' : 'var(--red)',
+          color: caughtRight && lastChanceResult !== 'escaped' ? 'var(--green)' : 'var(--red)',
           margin: '4px 0 0',
         }}>
-          {caughtRight ? 'Imposter caught!' : 'Imposter got away!'}
+          {lastChanceResult === 'escaped'
+            ? 'Imposter escaped on a guess!'
+            : caughtRight ? 'Imposter caught!' : 'Imposter got away!'}
         </h2>
       </div>
 
@@ -84,6 +96,35 @@ export default function Results({ view, onLeave }) {
           </span>
         </div>
       </div>
+
+      {/* Imposter last-chance guess */}
+      {showGuessSection && (
+        <div style={{
+          background: 'rgba(255,77,109,0.08)', border: '1px solid rgba(255,77,109,0.35)',
+          borderRadius: 16, padding: '16px 16px 14px', marginBottom: 10,
+        }}>
+          <div style={{
+            fontFamily: 'Nunito, sans-serif', fontWeight: 800, fontSize: 14,
+            color: 'var(--red)', marginBottom: 10, textAlign: 'center',
+          }}>
+            Last chance — guess the word to steal the win.
+          </div>
+          <input
+            value={guess}
+            onChange={e => setGuess(e.target.value)}
+            onKeyDown={e => e.key === 'Enter' && submitGuess()}
+            placeholder="Your guess…"
+            style={{
+              width: '100%', boxSizing: 'border-box',
+              background: 'var(--surface)', border: '1px solid var(--border)',
+              borderRadius: 10, padding: '10px 12px', color: 'var(--text)',
+              fontFamily: 'Nunito, sans-serif', fontWeight: 700, fontSize: 14,
+              outline: 'none', marginBottom: 8,
+            }}
+          />
+          <Btn onClick={submitGuess}>Submit guess</Btn>
+        </div>
+      )}
 
       {/* Scrollable vote + clue section */}
       <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 16 }} className="no-scrollbar">
