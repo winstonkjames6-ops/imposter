@@ -21,7 +21,7 @@ export default function Results({ view, onLeave }) {
     socket.emit('imposter:guess', { word: guess.trim() });
   }
 
-  const showGuessSection = role?.isImposter && caughtRight && !lastChanceResult && !guessSubmitted;
+  const showGuessSection = view.you.id === imposterId && caughtRight && !lastChanceResult && !guessSubmitted;
 
   return (
     <div style={{
