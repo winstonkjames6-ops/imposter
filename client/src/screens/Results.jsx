@@ -89,10 +89,10 @@ export default function Results({ view, onLeave }) {
         <div style={{
           fontFamily: 'var(--display-font)', fontWeight: 700, fontSize: 26, color: 'var(--text)',
         }}>
-          {role?.word}{' '}
-          <span style={{ color: 'var(--faint)', fontSize: 16, fontWeight: 500 }}>
-            · {role?.category}
-          </span>
+          {view.you.isImposter && view.result?.caught && !lastChanceResult
+            ? '???'
+            : <>{role?.word}{' '}<span style={{ color: 'var(--faint)', fontSize: 16, fontWeight: 500 }}>· {role?.category}</span></>
+          }
         </div>
       </div>
 
