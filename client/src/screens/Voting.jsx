@@ -59,7 +59,7 @@ export default function Voting({ view, onLeave }) {
 
           const rowContent = (
             <>
-              <PlayerBadge name={entry.name} color={entry.color} size={52} />
+              <PlayerBadge name={entry.name} color={entry.color} size={52} character={entry.character} />
               <div style={{ flex: 1 }}>
                 <div style={{
                   fontFamily: 'var(--display-font)', fontWeight: 600,

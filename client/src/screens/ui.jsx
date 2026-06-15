@@ -148,6 +148,66 @@ export function TopBar({ title, num, onBack, right }) {
   );
 }
 
+// ── CharacterSVG ────────────────────────────────────────────
+// Inline SVG bean character rendered from a character object.
+export function CharacterSVG({ character, size = 80 }) {
+  const { bodyColor = '#FF4000', eyes = 'dots', mouth = 'smile' } = character || {};
+  const body = "M40,7 C18,7 5,21 5,42 C5,63 18,77 40,77 C62,77 75,63 75,42 C75,21 62,7 40,7Z";
+  const L = 27, R = 53, EY = 38, MX = 40, MY = 57;
+
+  let eyeEl;
+  switch (eyes) {
+    case 'happy':
+      eyeEl = <>
+        <path d={`M${L-7},${EY} Q${L},${EY-9} ${L+7},${EY}`} stroke="#1a1a1a" strokeWidth="3" fill="none" strokeLinecap="round"/>
+        <path d={`M${R-7},${EY} Q${R},${EY-9} ${R+7},${EY}`} stroke="#1a1a1a" strokeWidth="3" fill="none" strokeLinecap="round"/>
+      </>;
+      break;
+    case 'wide':
+      eyeEl = <>
+        <circle cx={L} cy={EY} r="8" fill="white"/>
+        <circle cx={L} cy={EY} r="4.5" fill="#1a1a1a"/>
+        <circle cx={R} cy={EY} r="8" fill="white"/>
+        <circle cx={R} cy={EY} r="4.5" fill="#1a1a1a"/>
+      </>;
+      break;
+    case 'wink':
+      eyeEl = <>
+        <circle cx={L} cy={EY} r="5.5" fill="#1a1a1a"/>
+        <path d={`M${R-7},${EY} Q${R},${EY-9} ${R+7},${EY}`} stroke="#1a1a1a" strokeWidth="3" fill="none" strokeLinecap="round"/>
+      </>;
+      break;
+    default:
+      eyeEl = <>
+        <circle cx={L} cy={EY} r="5.5" fill="#1a1a1a"/>
+        <circle cx={R} cy={EY} r="5.5" fill="#1a1a1a"/>
+      </>;
+  }
+
+  let mouthEl;
+  switch (mouth) {
+    case 'flat':
+      mouthEl = <line x1={MX-11} y1={MY} x2={MX+11} y2={MY} stroke="#1a1a1a" strokeWidth="3" strokeLinecap="round"/>;
+      break;
+    case 'open':
+      mouthEl = <path d={`M${MX-11},${MY} Q${MX},${MY+13} ${MX+11},${MY}`} fill="#1a1a1a"/>;
+      break;
+    case 'smirk':
+      mouthEl = <path d={`M${MX-9},${MY+2} Q${MX+2},${MY+8} ${MX+11},${MY-3}`} stroke="#1a1a1a" strokeWidth="3" fill="none" strokeLinecap="round"/>;
+      break;
+    default:
+      mouthEl = <path d={`M${MX-11},${MY} Q${MX},${MY+12} ${MX+11},${MY}`} stroke="#1a1a1a" strokeWidth="3" fill="none" strokeLinecap="round"/>;
+  }
+
+  return (
+    <svg viewBox="0 0 80 80" width={size} height={size} xmlns="http://www.w3.org/2000/svg" style={{ display: 'block' }}>
+      <path d={body} fill={bodyColor}/>
+      {eyeEl}
+      {mouthEl}
+    </svg>
+  );
+}
+
 // ── PlayerBadge ────────────────────────────────────────────
 // Square rounded-corner avatar with deterministic warm tone.
 const BADGE_PALETTE = [
@@ -171,11 +231,10 @@ function textForBg(hex) {
   return (r * 299 + g * 587 + b * 114) / 1000 > 160 ? '#1a1a1a' : '#fff';
 }
 
-export function PlayerBadge({ name, size = 52, color, isYou = false }) {
+export function PlayerBadge({ name, size = 52, color, isYou = false, character }) {
   const fallback = nameToColor(name);
-  const bg = color || fallback.bg;
+  const bg = character?.bodyColor || color || fallback.bg;
   const r = Math.round(size * 0.27);
-  const seed = encodeURIComponent(name || '?');
   return (
     <div style={{
       width: size, height: size, borderRadius: r, flexShrink: 0,
@@ -185,14 +244,18 @@ export function PlayerBadge({ name, size = 52, color, isYou = false }) {
       outline: isYou ? '2.5px solid var(--accent)' : 'none',
       outlineOffset: isYou ? '2px' : '0',
     }}>
-      <img
-        src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${seed}`}
-        alt={name || '?'}
-        width={size}
-        height={size}
-        style={{ display: 'block', width: size, height: size }}
-        draggable={false}
-      />
+      {character ? (
+        <CharacterSVG character={character} size={size} />
+      ) : (
+        <img
+          src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(name || '?')}`}
+          alt={name || '?'}
+          width={size}
+          height={size}
+          style={{ display: 'block', width: size, height: size }}
+          draggable={false}
+        />
+      )}
     </div>
   );
 }
@@ -376,7 +439,7 @@ export function MenuOverlay({ isOpen, onClose, isHost, onRestart, onLeave, playe
                   borderBottom: i < kickable.length - 1 ? '1px solid var(--line)' : 'none',
                 }}
               >
-                <PlayerBadge name={p.name} color={p.color} size={36} />
+                <PlayerBadge name={p.name} color={p.color} size={36} character={p.character} />
                 <span style={{ flex: 1, fontFamily: 'var(--display-font)', fontWeight: 600, fontSize: 16, color: 'var(--ink)' }}>
                   {p.name}
                   {p.kickVoteCount > 0 && (

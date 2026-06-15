@@ -49,7 +49,7 @@ export default function ClueReview({ view, onLeave }) {
             background: 'var(--surface)', border: '1px solid var(--border)',
             borderRadius: 16, padding: '12px 14px',
           }}>
-            <PlayerBadge name={p.name} color={p.color} size={42} />
+            <PlayerBadge name={p.name} color={p.color} size={42} character={p.character} />
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{
                 fontFamily: 'var(--display-font)', fontWeight: 600,

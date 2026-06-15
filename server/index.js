@@ -32,6 +32,18 @@ const ALLOWED_COLORS = new Set([
 ]);
 const DEFAULT_COLOR = '#607D8B';
 
+const VALID_EYES = new Set(['dots', 'happy', 'wide', 'wink']);
+const VALID_MOUTHS = new Set(['smile', 'flat', 'open', 'smirk']);
+
+function sanitizeCharacter(char) {
+  if (!char || typeof char !== 'object') return null;
+  return {
+    bodyColor: ALLOWED_COLORS.has(char.bodyColor) ? char.bodyColor : null,
+    eyes: VALID_EYES.has(char.eyes) ? char.eyes : 'dots',
+    mouth: VALID_MOUTHS.has(char.mouth) ? char.mouth : 'smile',
+  };
+}
+
 const WORD_PACKS = [
   { category: "Food", words: ["Hot dog", "Sushi", "Mambo sauce", "Pancakes", "Tacos"] },
   { category: "Sports", words: ["Volleyball", "Bowling", "Track", "Boxing", "Golf"] },
@@ -100,6 +112,7 @@ function buildView(room, player) {
       id: p.id,
       name: p.name,
       color: p.color,
+      character: p.character ?? null,
       clue: lastEntry?.clues[p.token] || null,
     }));
   } else if (room.phase === "discussion" || room.phase === "voting" || room.phase === "results") {
@@ -107,6 +120,7 @@ function buildView(room, player) {
       id: p.id,
       name: p.name,
       color: p.color,
+      character: p.character ?? null,
       clues: room.allClues.map(entry => entry.clues[p.token] || null),
     }));
   }
@@ -124,6 +138,7 @@ function buildView(room, player) {
       name: p.name,
       votes: tally[p.id] || 0,
       color: p.color,
+      character: p.character ?? null,
     }));
   }
 
@@ -145,6 +160,7 @@ function buildView(room, player) {
       isHost: p.token === room.hostToken,
       isSpectator: !!p.spectator,
       color: p.color,
+      character: p.character ?? null,
       kickVoteCount: room.kickVotes.get(p.token)?.size ?? 0,
     })),
     kickVotes: Object.fromEntries(
@@ -206,6 +222,7 @@ function buildView(room, player) {
         id: p.id,
         name: p.name,
         color: p.color,
+        character: p.character ?? null,
         clue: clues[p.token] || null,
       })),
     })),
@@ -263,17 +280,18 @@ function checkVoteDone(room) {
 
 io.on("connection", (socket) => {
   // ---- Create a room ----
-  socket.on("room:create", ({ name, color }, callback) => {
+  socket.on("room:create", ({ name, color, character }, callback) => {
     const room = createRoom();
     const safeColor = ALLOWED_COLORS.has(color) ? color : DEFAULT_COLOR;
-    const player = addPlayer(room, socket, name, false, safeColor);
+    const safeChar = sanitizeCharacter(character);
+    const player = addPlayer(room, socket, name, false, safeColor, safeChar);
     room.hostToken = player.token;
     callback({ ok: true, roomCode: room.code, token: player.token });
     broadcastViews(room);
   });
 
   // ---- Join an existing room ----
-  socket.on("room:join", ({ roomCode, name, color }, callback) => {
+  socket.on("room:join", ({ roomCode, name, color, character }, callback) => {
     const room = rooms.get(roomCode?.toUpperCase());
     if (!room) return callback({ ok: false, error: "Room not found." });
     if (room.players.size >= 10)
@@ -281,7 +299,8 @@ io.on("connection", (socket) => {
 
     const midGame = room.phase !== "lobby";
     const safeColor = ALLOWED_COLORS.has(color) ? color : DEFAULT_COLOR;
-    const player = addPlayer(room, socket, name, midGame, safeColor);
+    const safeChar = sanitizeCharacter(character);
+    const player = addPlayer(room, socket, name, midGame, safeColor, safeChar);
     if (midGame && room.autoAccept) {
       room.autoPending.add(player.token);
     }
@@ -714,7 +733,7 @@ setInterval(() => {
 // Helpers
 // ------------------------------------------------------------
 
-function addPlayer(room, socket, name, spectator = false, color = DEFAULT_COLOR) {
+function addPlayer(room, socket, name, spectator = false, color = DEFAULT_COLOR, character = null) {
   const player = {
     token: randomUUID(), // auth identity — never shared with other clients
     id: randomUUID(),    // public identity — safe to expose for voting
@@ -723,6 +742,7 @@ function addPlayer(room, socket, name, spectator = false, color = DEFAULT_COLOR)
     connected: true,
     spectator,
     color,
+    character,
   };
   room.players.set(player.token, player);
   socket.data = { roomCode: room.code, token: player.token };

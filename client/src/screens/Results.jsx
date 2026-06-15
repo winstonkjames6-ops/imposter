@@ -65,7 +65,7 @@ export default function Results({ view, onLeave }) {
         borderRadius: 24, padding: '20px 16px 22px', marginBottom: 16,
       }}>
         <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 6 }}>
-          <PlayerBadge name={imposterName} color={imposterColor} size={80} />
+          <PlayerBadge name={imposterName} color={imposterColor} size={80} character={imposterEntry?.character} />
         </div>
         <div style={{
           fontFamily: 'Nunito, sans-serif', fontWeight: 700, fontSize: 12.5,
@@ -139,7 +139,7 @@ export default function Results({ view, onLeave }) {
               border: `1px solid ${isImposter ? 'rgba(255,77,109,0.3)' : 'var(--border)'}`,
               borderRadius: 16, padding: '10px 14px',
             }}>
-              <PlayerBadge name={p.name} color={p.color} size={42} />
+              <PlayerBadge name={p.name} color={p.color} size={42} character={p.character} />
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{
                   fontFamily: 'var(--display-font)', fontWeight: 600,

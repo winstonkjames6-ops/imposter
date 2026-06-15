@@ -75,7 +75,7 @@ export default function Discussion({ view, onLeave }) {
                   background: 'var(--surface)', border: '1px solid var(--border)',
                   borderRadius: 16, padding: '10px 14px',
                 }}>
-                  <PlayerBadge name={entry.name} color={entry.color} size={44} />
+                  <PlayerBadge name={entry.name} color={entry.color} size={44} character={entry.character} />
                   <div style={{ flex: 1 }}>
                     <div style={{
                       fontFamily: 'var(--display-font)', fontWeight: 600,

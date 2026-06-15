@@ -135,7 +135,7 @@ export default function Clues({ view, onLeave }) {
               background: 'var(--surface)', border: '1px solid var(--border)',
               borderRadius: 16, padding: '10px 14px',
             }}>
-              <PlayerBadge name={p.name} color={p.color} size={40} />
+              <PlayerBadge name={p.name} color={p.color} size={40} character={p.character} />
               <span style={{
                 flex: 1, fontFamily: 'var(--display-font)', fontWeight: 600,
                 fontSize: 16, color: p.connected ? 'var(--text)' : 'var(--faint)',

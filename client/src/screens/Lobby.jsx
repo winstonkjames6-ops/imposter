@@ -155,7 +155,7 @@ export default function Lobby({ view, onLeave }) {
                 </span>
               )}
               <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 8 }}>
-                <PlayerBadge name={p.name} color={p.color} size={64} />
+                <PlayerBadge name={p.name} color={p.color} size={64} character={p.character} />
               </div>
               <div style={{
                 fontFamily: 'var(--display-font)', fontWeight: 600, fontSize: 16,
@@ -204,7 +204,7 @@ export default function Lobby({ view, onLeave }) {
                   background: 'var(--surface)', border: '1px solid var(--border)',
                   borderRadius: 16, padding: '10px 14px',
                 }}>
-                  <PlayerBadge name={p.name} color={p.color} size={36} />
+                  <PlayerBadge name={p.name} color={p.color} size={36} character={p.character} />
                   <span style={{
                     flex: 1, fontFamily: 'var(--display-font)', fontWeight: 600,
                     fontSize: 15, color: p.connected ? 'var(--muted)' : 'var(--faint)',
