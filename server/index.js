@@ -633,19 +633,19 @@ io.on("connection", (socket) => {
   });
 
   // ---- Host kicks a player directly ----
-  socket.on("player:kick", ({ token }, callback) => {
+  socket.on("player:kick", ({ id }, callback) => {
     const { room, player } = locate(socket);
     if (!room) return callback?.({ ok: false, error: "Not in a room." });
     if (player.token !== room.hostToken)
       return callback?.({ ok: false, error: "Only the host can kick players." });
-    if (!token || !room.players.has(token))
-      return callback?.({ ok: false, error: "Player not found." });
-    if (token === room.hostToken)
+
+    const target = [...room.players.values()].find(p => p.id === id);
+    if (!target) return callback?.({ ok: false, error: "Player not found." });
+    if (target.token === room.hostToken)
       return callback?.({ ok: false, error: "Cannot kick the host." });
 
-    const target = room.players.get(token);
-    room.players.delete(token);
-    room.kickVotes.delete(token);
+    room.players.delete(target.token);
+    room.kickVotes.delete(target.token);
     if (target.socketId) {
       io.to(target.socketId).emit("kicked");
     }

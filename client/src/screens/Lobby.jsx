@@ -566,7 +566,7 @@ export default function Lobby({ view, onLeave }) {
                 </button>
                 <button
                   onClick={() => {
-                    socket.emit('player:kick', { token: kickConfirm.token });
+                    socket.emit('player:kick', { id: kickConfirm.id });
                     setKickConfirm(null);
                     setKickTarget('');
                   }}
