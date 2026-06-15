@@ -65,6 +65,7 @@ function createRoom() {
     totalClueRounds: 1,     // how many clue rounds per game (1-3), configurable via room:set-rounds
     currentClueRound: 1,    // which clue round we're on within the current game
     discussionDuration: 60000, // ms; configurable via room:set-discussion-time
+    lastActivity: Date.now(),
   };
   rooms.set(room.code, room);
   return room;
@@ -197,6 +198,7 @@ function buildView(room, player) {
 
 // Emit each player their own view. Only ever call this — never emit raw state.
 function broadcastViews(room) {
+  room.lastActivity = Date.now();
   for (const player of room.players.values()) {
     if (player.connected && player.socketId) {
       io.to(player.socketId).emit("game:view", buildView(room, player));
@@ -624,6 +626,21 @@ io.on("connection", (socket) => {
     }
   });
 });
+
+// ------------------------------------------------------------
+// Room garbage collection
+// ------------------------------------------------------------
+
+setInterval(() => {
+  const cutoff = Date.now() - 10 * 60 * 1000;
+  for (const [code, room] of rooms) {
+    const allDisconnected = [...room.players.values()].every(p => !p.connected);
+    if (allDisconnected && room.lastActivity < cutoff) {
+      rooms.delete(code);
+      console.log(`Room ${code} deleted by GC (all disconnected, inactive > 10 min)`);
+    }
+  }
+}, 5 * 60 * 1000);
 
 // ------------------------------------------------------------
 // Helpers
