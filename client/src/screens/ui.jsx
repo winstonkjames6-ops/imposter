@@ -174,20 +174,25 @@ function textForBg(hex) {
 export function PlayerBadge({ name, size = 52, color, isYou = false }) {
   const fallback = nameToColor(name);
   const bg = color || fallback.bg;
-  const text = color ? textForBg(color) : fallback.text;
   const r = Math.round(size * 0.27);
-  const fs = Math.round(size * 0.46);
+  const seed = encodeURIComponent(name || '?');
   return (
     <div style={{
       width: size, height: size, borderRadius: r, flexShrink: 0,
       background: bg,
       display: 'flex', alignItems: 'center', justifyContent: 'center',
-      fontFamily: 'inherit', fontWeight: 700, fontSize: fs,
-      color: text, letterSpacing: '-0.03em', lineHeight: 1, overflow: 'hidden',
+      overflow: 'hidden',
       outline: isYou ? '2.5px solid var(--accent)' : 'none',
       outlineOffset: isYou ? '2px' : '0',
     }}>
-      {(name || '?')[0].toUpperCase()}
+      <img
+        src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${seed}`}
+        alt={name || '?'}
+        width={size}
+        height={size}
+        style={{ display: 'block', width: size, height: size }}
+        draggable={false}
+      />
     </div>
   );
 }
