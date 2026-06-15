@@ -613,6 +613,28 @@ io.on("connection", (socket) => {
     broadcastViews(room);
   });
 
+  // ---- Host kicks a player directly ----
+  socket.on("player:kick", ({ token }, callback) => {
+    const { room, player } = locate(socket);
+    if (!room) return callback?.({ ok: false, error: "Not in a room." });
+    if (player.token !== room.hostToken)
+      return callback?.({ ok: false, error: "Only the host can kick players." });
+    if (!token || !room.players.has(token))
+      return callback?.({ ok: false, error: "Player not found." });
+    if (token === room.hostToken)
+      return callback?.({ ok: false, error: "Cannot kick the host." });
+
+    const target = room.players.get(token);
+    room.players.delete(token);
+    room.kickVotes.delete(token);
+    if (target.socketId) {
+      io.to(target.socketId).emit("kicked");
+    }
+
+    callback?.({ ok: true });
+    broadcastViews(room);
+  });
+
   // ---- Imposter last-chance guess ----
   socket.on("imposter:guess", ({ word }, callback) => {
     const { room, player } = locate(socket);

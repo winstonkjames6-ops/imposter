@@ -6,6 +6,8 @@ export default function Lobby({ view, onLeave }) {
   const [error, setError] = useState(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const [packOpen, setPackOpen] = useState(false);
+  const [kickTarget, setKickTarget] = useState('');
+  const [kickConfirm, setKickConfirm] = useState(null); // player object to confirm
   const [packChoice, setPackChoice] = useState('random');
   const [customText, setCustomText] = useState('');
   const [packError, setPackError] = useState(null);
@@ -444,7 +446,7 @@ export default function Lobby({ view, onLeave }) {
             {/* Vote kick toggle */}
             <div style={{
               display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-              paddingBottom: 12,
+              paddingBottom: 12, marginBottom: 12, borderBottom: '1px solid var(--border)',
             }}>
               <span style={{
                 fontFamily: 'Nunito, sans-serif', fontWeight: 700,
@@ -472,7 +474,114 @@ export default function Lobby({ view, onLeave }) {
                 }} />
               </label>
             </div>
+
+            {/* Kick player */}
+            {(() => {
+              const kickable = view.players.filter(p => !p.isHost && p.connected);
+              return kickable.length > 0 ? (
+                <div style={{ paddingBottom: 12 }}>
+                  <div style={{
+                    fontFamily: 'Nunito, sans-serif', fontWeight: 700, fontSize: 10.5,
+                    letterSpacing: 1, color: 'var(--faint)', marginBottom: 8,
+                  }}>
+                    KICK PLAYER
+                  </div>
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <select
+                      value={kickTarget}
+                      onChange={e => setKickTarget(e.target.value)}
+                      style={{
+                        flex: 1, background: 'var(--surface2)', border: '1px solid var(--border)',
+                        borderRadius: 10, padding: '8px 10px', color: 'var(--text)',
+                        fontFamily: 'Nunito, sans-serif', fontWeight: 700, fontSize: 14,
+                        outline: 'none', cursor: 'pointer',
+                      }}
+                    >
+                      <option value="">Select player…</option>
+                      {kickable.map(p => (
+                        <option key={p.id} value={p.id}>{p.name}</option>
+                      ))}
+                    </select>
+                    <button
+                      onClick={() => {
+                        const target = kickable.find(p => p.id === kickTarget);
+                        if (target) setKickConfirm(target);
+                      }}
+                      disabled={!kickTarget}
+                      style={{
+                        background: kickTarget ? 'rgba(255,77,109,0.15)' : 'var(--surface2)',
+                        border: `1px solid ${kickTarget ? 'rgba(255,77,109,0.4)' : 'var(--border)'}`,
+                        borderRadius: 10, padding: '8px 16px',
+                        fontFamily: 'Nunito, sans-serif', fontWeight: 700, fontSize: 14,
+                        color: kickTarget ? 'var(--red)' : 'var(--faint)',
+                        cursor: kickTarget ? 'pointer' : 'default',
+                        flexShrink: 0, WebkitTapHighlightColor: 'transparent',
+                      }}
+                    >
+                      Kick
+                    </button>
+                  </div>
+                </div>
+              ) : null;
+            })()}
           </div>
+        )}
+
+        {/* Kick confirmation modal */}
+        {kickConfirm && (
+          <>
+            <div
+              onClick={() => setKickConfirm(null)}
+              style={{ position: 'fixed', inset: 0, zIndex: 60, background: 'rgba(0,0,0,.6)' }}
+            />
+            <div style={{
+              position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 61,
+              background: 'var(--paper)', borderRadius: '26px 26px 0 0',
+              padding: '24px 22px 40px', boxShadow: '0 -20px 50px -20px rgba(0,0,0,.4)',
+            }}>
+              <div style={{ width: 40, height: 4, borderRadius: 99, background: 'var(--line2)', margin: '0 auto 20px' }} />
+              <div style={{
+                fontFamily: 'var(--display-font)', fontWeight: 700, fontSize: 20,
+                color: 'var(--text)', textAlign: 'center', marginBottom: 8,
+              }}>
+                Remove {kickConfirm.name}?
+              </div>
+              <div style={{
+                fontFamily: 'Nunito, sans-serif', fontWeight: 600, fontSize: 14,
+                color: 'var(--faint)', textAlign: 'center', marginBottom: 24,
+              }}>
+                Remove {kickConfirm.name} from the game?
+              </div>
+              <div style={{ display: 'flex', gap: 10 }}>
+                <button
+                  onClick={() => setKickConfirm(null)}
+                  style={{
+                    flex: 1, background: 'var(--surface)', border: '1px solid var(--border)',
+                    borderRadius: 14, padding: '13px', fontFamily: 'Nunito, sans-serif',
+                    fontWeight: 700, fontSize: 15, color: 'var(--muted)', cursor: 'pointer',
+                    WebkitTapHighlightColor: 'transparent',
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => {
+                    socket.emit('player:kick', { token: kickConfirm.token });
+                    setKickConfirm(null);
+                    setKickTarget('');
+                  }}
+                  style={{
+                    flex: 1, background: 'var(--red)', border: 'none',
+                    borderRadius: 14, padding: '13px', fontFamily: 'Nunito, sans-serif',
+                    fontWeight: 700, fontSize: 15, color: '#fff', cursor: 'pointer',
+                    WebkitTapHighlightColor: 'transparent',
+                  }}
+                >
+                  Confirm
+                </button>
+              </div>
+            </div>
+          </>
         )}
 
       </div>{/* end scrollable middle */}
