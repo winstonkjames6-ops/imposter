@@ -644,11 +644,11 @@ io.on("connection", (socket) => {
     if (target.token === room.hostToken)
       return callback?.({ ok: false, error: "Cannot kick the host." });
 
+    if (target.socketId) {
+      io.to(target.socketId).emit("kick:result", { name: target.name, kickedId: target.id });
+    }
     room.players.delete(target.token);
     room.kickVotes.delete(target.token);
-    if (target.socketId) {
-      io.to(target.socketId).emit("kicked");
-    }
 
     callback?.({ ok: true });
     broadcastViews(room);
