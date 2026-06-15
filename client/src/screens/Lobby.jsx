@@ -65,6 +65,17 @@ export default function Lobby({ view, onLeave }) {
   const slots = [...activePlayers];
   while (slots.length < 6) slots.push(null);
 
+  function stepBtnStyle(disabled) {
+    return {
+      width: 34, height: 34, borderRadius: '50%', border: 'none',
+      background: 'var(--surface2)', color: 'var(--muted)',
+      fontFamily: 'var(--display-font)', fontWeight: 700, fontSize: 20,
+      lineHeight: 1, cursor: 'pointer', flexShrink: 0,
+      WebkitTapHighlightColor: 'transparent',
+      opacity: disabled ? 0.35 : 1,
+    };
+  }
+
   return (
     <div style={{
       display: 'flex', flexDirection: 'column', height: '100vh',
@@ -117,16 +128,18 @@ export default function Lobby({ view, onLeave }) {
         </div>
       </button>
 
-      {/* Players header */}
-      <div style={{
-        fontFamily: 'Nunito, sans-serif', fontWeight: 800, fontSize: 12.5,
-        letterSpacing: 1, color: 'var(--faint)', marginBottom: 10,
-      }}>
-        PLAYERS · {activePlayers.length}
-      </div>
+      {/* Scrollable middle: players, spectators, host panel */}
+      <div style={{ flex: 1, overflowY: 'auto' }} className="no-scrollbar">
 
-      {/* Player grid */}
-      <div style={{ flex: 1, overflowY: 'auto', margin: '0 -4px', padding: '0 4px' }} className="no-scrollbar">
+        {/* Players header */}
+        <div style={{
+          fontFamily: 'Nunito, sans-serif', fontWeight: 800, fontSize: 12.5,
+          letterSpacing: 1, color: 'var(--faint)', marginBottom: 10,
+        }}>
+          PLAYERS · {activePlayers.length}
+        </div>
+
+        {/* Player grid */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
           {slots.map((p, i) => p ? (
             <div key={i} style={{
@@ -172,289 +185,268 @@ export default function Lobby({ view, onLeave }) {
             </div>
           ))}
         </div>
-      </div>
 
-      {/* Spectators */}
-      {spectators.length > 0 && (
-        <>
-          <div style={{
-            fontFamily: 'Nunito, sans-serif', fontWeight: 800, fontSize: 12.5,
-            letterSpacing: 1, color: 'var(--faint)', margin: '16px 0 8px',
-          }}>
-            SPECTATORS · {spectators.length}
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {spectators.map(p => (
-              <div key={p.id} style={{
-                display: 'flex', alignItems: 'center', gap: 12,
-                background: 'var(--surface)', border: '1px solid var(--border)',
-                borderRadius: 16, padding: '10px 14px',
-              }}>
-                <PlayerBadge name={p.name} color={p.color} size={36} />
-                <span style={{
-                  flex: 1, fontFamily: 'var(--display-font)', fontWeight: 600,
-                  fontSize: 15, color: p.connected ? 'var(--muted)' : 'var(--faint)',
+        {/* Spectators */}
+        {spectators.length > 0 && (
+          <>
+            <div style={{
+              fontFamily: 'Nunito, sans-serif', fontWeight: 800, fontSize: 12.5,
+              letterSpacing: 1, color: 'var(--faint)', margin: '16px 0 8px',
+            }}>
+              SPECTATORS · {spectators.length}
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {spectators.map(p => (
+                <div key={p.id} style={{
+                  display: 'flex', alignItems: 'center', gap: 12,
+                  background: 'var(--surface)', border: '1px solid var(--border)',
+                  borderRadius: 16, padding: '10px 14px',
                 }}>
-                  {p.name}
-                  {p.name === view.you.name && (
-                    <span style={{ color: 'var(--faint)', fontSize: 13 }}> (you)</span>
-                  )}
-                </span>
-                {view.you.isHost ? (
-                  <button
-                    onClick={() => socket.emit('player:accept-join', { id: p.id })}
-                    style={{
-                      background: 'var(--accent)', border: 'none', borderRadius: 999,
-                      padding: '5px 13px', fontFamily: 'inherit', fontWeight: 700,
-                      fontSize: 12, letterSpacing: '0.05em', color: '#fff',
-                      cursor: 'pointer', WebkitTapHighlightColor: 'transparent',
-                    }}
-                  >
-                    Allow
-                  </button>
-                ) : (
+                  <PlayerBadge name={p.name} color={p.color} size={36} />
                   <span style={{
-                    fontFamily: 'Nunito, sans-serif', fontWeight: 700,
-                    fontSize: 11.5, letterSpacing: 0.5, color: 'var(--faint)',
+                    flex: 1, fontFamily: 'var(--display-font)', fontWeight: 600,
+                    fontSize: 15, color: p.connected ? 'var(--muted)' : 'var(--faint)',
                   }}>
-                    WATCHING
+                    {p.name}
+                    {p.name === view.you.name && (
+                      <span style={{ color: 'var(--faint)', fontSize: 13 }}> (you)</span>
+                    )}
                   </span>
-                )}
-              </div>
-            ))}
-          </div>
-        </>
-      )}
+                  {view.you.isHost ? (
+                    <button
+                      onClick={() => socket.emit('player:accept-join', { id: p.id })}
+                      style={{
+                        background: 'var(--accent)', border: 'none', borderRadius: 999,
+                        padding: '5px 13px', fontFamily: 'inherit', fontWeight: 700,
+                        fontSize: 12, letterSpacing: '0.05em', color: '#fff',
+                        cursor: 'pointer', WebkitTapHighlightColor: 'transparent',
+                      }}
+                    >
+                      Allow
+                    </button>
+                  ) : (
+                    <span style={{
+                      fontFamily: 'Nunito, sans-serif', fontWeight: 700,
+                      fontSize: 11.5, letterSpacing: 0.5, color: 'var(--faint)',
+                    }}>
+                      WATCHING
+                    </span>
+                  )}
+                </div>
+              ))}
+            </div>
+          </>
+        )}
 
-      {/* Footer */}
-      <div style={{ paddingTop: 16 }}>
-
-        {/* Word Pack row */}
-        <div style={{
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          background: 'var(--surface)', border: '1px solid var(--border)',
-          borderRadius: 16, padding: '11px 14px', marginBottom: 14,
-        }}>
-          <div>
-            <div style={{
-              fontFamily: 'Nunito, sans-serif', fontWeight: 700, fontSize: 10.5,
-              letterSpacing: 1, color: 'var(--faint)', marginBottom: 2,
-            }}>
-              WORD PACK
-            </div>
-            <div style={{
-              fontFamily: 'var(--display-font)', fontWeight: 600,
-              fontSize: 15, color: 'var(--text)',
-            }}>
-              {view.packName ?? 'Random'}
-            </div>
-          </div>
-          {view.you.isHost && (
-            <button
-              onClick={openPackSheet}
-              style={{
-                background: 'none', border: 'none',
-                boxShadow: 'inset 0 0 0 1px var(--line2)',
-                borderRadius: 999, padding: '5px 13px',
-                fontFamily: 'inherit', fontWeight: 700, fontSize: 12,
-                letterSpacing: '0.06em', textTransform: 'uppercase',
-                color: 'var(--muted)', cursor: 'pointer',
-                WebkitTapHighlightColor: 'transparent',
-              }}
-            >
-              Edit
-            </button>
-          )}
-        </div>
-
-        {/* Rounds row */}
-        <div style={{
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          background: 'var(--surface)', border: '1px solid var(--border)',
-          borderRadius: 16, padding: '11px 14px', marginBottom: 14,
-        }}>
-          <div>
-            <div style={{
-              fontFamily: 'Nunito, sans-serif', fontWeight: 700, fontSize: 10.5,
-              letterSpacing: 1, color: 'var(--faint)', marginBottom: 2,
-            }}>
-              CLUE ROUNDS
-            </div>
-            <div style={{
-              fontFamily: 'var(--display-font)', fontWeight: 600,
-              fontSize: 15, color: 'var(--text)',
-            }}>
-              {view.totalClueRounds ?? 1} {(view.totalClueRounds ?? 1) === 1 ? 'clue round' : 'clue rounds'}
-            </div>
-          </div>
-          {view.you.isHost && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-              <button
-                onClick={() => emitRounds(parseInt(roundsVal) - 1)}
-                disabled={parseInt(roundsVal) <= 1}
-                style={{
-                  width: 34, height: 34, borderRadius: '50%', border: 'none',
-                  background: 'var(--surface2)', color: 'var(--muted)',
-                  fontFamily: 'var(--display-font)', fontWeight: 700, fontSize: 20,
-                  lineHeight: 1, cursor: 'pointer', flexShrink: 0,
-                  WebkitTapHighlightColor: 'transparent',
-                  opacity: parseInt(roundsVal) <= 1 ? 0.35 : 1,
-                }}
-              >
-                −
-              </button>
-              <input
-                type="text"
-                inputMode="numeric"
-                pattern="[0-9]*"
-                value={roundsVal}
-                onChange={e => {
-                  const raw = e.target.value.replace(/[^0-9]/g, '');
-                  setRoundsVal(raw);
-                  const n = parseInt(raw);
-                  if (!isNaN(n) && n >= 1 && n <= 3) {
-                    socket.emit('room:set-rounds', { rounds: n });
-                  }
-                }}
-                onBlur={() => {
-                  const n = parseInt(roundsVal);
-                  emitRounds(isNaN(n) ? 3 : n);
-                }}
-                style={{
-                  width: 42, textAlign: 'center', border: '1px solid var(--border)',
-                  borderRadius: 10, background: 'var(--surface2)',
-                  fontFamily: 'var(--display-font)', fontWeight: 700, fontSize: 17,
-                  color: 'var(--text)', padding: '4px 0', outline: 'none',
-                }}
-              />
-              <button
-                onClick={() => emitRounds(parseInt(roundsVal) + 1)}
-                disabled={parseInt(roundsVal) >= 3}
-                style={{
-                  width: 34, height: 34, borderRadius: '50%', border: 'none',
-                  background: 'var(--surface2)', color: 'var(--muted)',
-                  fontFamily: 'var(--display-font)', fontWeight: 700, fontSize: 20,
-                  lineHeight: 1, cursor: 'pointer', flexShrink: 0,
-                  WebkitTapHighlightColor: 'transparent',
-                  opacity: parseInt(roundsVal) >= 3 ? 0.35 : 1,
-                }}
-              >
-                +
-              </button>
-            </div>
-          )}
-        </div>
-
-        {/* Discussion timer row */}
-        <div style={{
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          background: 'var(--surface)', border: '1px solid var(--border)',
-          borderRadius: 16, padding: '11px 14px', marginBottom: 14,
-        }}>
-          <div>
-            <div style={{
-              fontFamily: 'Nunito, sans-serif', fontWeight: 700, fontSize: 10.5,
-              letterSpacing: 1, color: 'var(--faint)', marginBottom: 2,
-            }}>
-              DISCUSS TIME
-            </div>
-            <div style={{
-              fontFamily: 'var(--display-font)', fontWeight: 600,
-              fontSize: 15, color: 'var(--text)',
-            }}>
-              {view.discussionTime ?? 60}s
-            </div>
-          </div>
-          {view.you.isHost && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-              <button
-                onClick={() => emitDiscussion(parseInt(discussVal) - 10)}
-                disabled={parseInt(discussVal) <= 10}
-                style={{
-                  width: 34, height: 34, borderRadius: '50%', border: 'none',
-                  background: 'var(--surface2)', color: 'var(--muted)',
-                  fontFamily: 'var(--display-font)', fontWeight: 700, fontSize: 20,
-                  lineHeight: 1, cursor: 'pointer', flexShrink: 0,
-                  WebkitTapHighlightColor: 'transparent',
-                  opacity: parseInt(discussVal) <= 10 ? 0.35 : 1,
-                }}
-              >
-                −
-              </button>
-              <input
-                type="text"
-                inputMode="numeric"
-                pattern="[0-9]*"
-                value={discussVal}
-                onChange={e => {
-                  const raw = e.target.value.replace(/[^0-9]/g, '');
-                  setDiscussVal(raw);
-                  const n = parseInt(raw);
-                  if (!isNaN(n) && n >= 10 && n <= 300) {
-                    socket.emit('room:set-discussion-time', { seconds: n });
-                  }
-                }}
-                onBlur={() => {
-                  const n = parseInt(discussVal);
-                  emitDiscussion(isNaN(n) ? 60 : n);
-                }}
-                style={{
-                  width: 48, textAlign: 'center', border: '1px solid var(--border)',
-                  borderRadius: 10, background: 'var(--surface2)',
-                  fontFamily: 'var(--display-font)', fontWeight: 700, fontSize: 17,
-                  color: 'var(--text)', padding: '4px 0', outline: 'none',
-                }}
-              />
-              <button
-                onClick={() => emitDiscussion(parseInt(discussVal) + 10)}
-                disabled={parseInt(discussVal) >= 300}
-                style={{
-                  width: 34, height: 34, borderRadius: '50%', border: 'none',
-                  background: 'var(--surface2)', color: 'var(--muted)',
-                  fontFamily: 'var(--display-font)', fontWeight: 700, fontSize: 20,
-                  lineHeight: 1, cursor: 'pointer', flexShrink: 0,
-                  WebkitTapHighlightColor: 'transparent',
-                  opacity: parseInt(discussVal) >= 300 ? 0.35 : 1,
-                }}
-              >
-                +
-              </button>
-            </div>
-          )}
-        </div>
-
+        {/* Host Control Panel */}
         {view.you.isHost && (
           <div style={{
-            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-            marginBottom: 14, padding: '0 2px',
+            marginTop: 20, marginBottom: 4,
+            border: '1px solid var(--border)', borderRadius: 20,
+            padding: '16px 16px 4px', background: 'var(--surface)',
           }}>
-            <span style={{
-              fontFamily: 'Nunito, sans-serif', fontWeight: 700,
-              fontSize: 14, color: 'var(--muted)',
+            <div style={{
+              fontFamily: 'Nunito, sans-serif', fontWeight: 800, fontSize: 11,
+              letterSpacing: 1.5, color: 'var(--faint)', marginBottom: 14,
             }}>
-              Auto-join next game
-            </span>
-            <label style={{ position: 'relative', display: 'inline-block', width: 48, height: 27, cursor: 'pointer', flexShrink: 0 }}>
-              <input
-                type="checkbox"
-                checked={!!view.autoAccept}
-                onChange={e => socket.emit('room:set-auto-accept', { value: e.target.checked })}
-                style={{ opacity: 0, width: 0, height: 0, position: 'absolute' }}
-              />
+              HOST CONTROLS
+            </div>
+
+            {/* Word Pack */}
+            <div style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              paddingBottom: 12, marginBottom: 12, borderBottom: '1px solid var(--border)',
+            }}>
+              <div>
+                <div style={{
+                  fontFamily: 'Nunito, sans-serif', fontWeight: 700, fontSize: 10.5,
+                  letterSpacing: 1, color: 'var(--faint)', marginBottom: 2,
+                }}>
+                  WORD PACK
+                </div>
+                <div style={{
+                  fontFamily: 'var(--display-font)', fontWeight: 600,
+                  fontSize: 15, color: 'var(--text)',
+                }}>
+                  {view.packName ?? 'Random'}
+                </div>
+              </div>
+              <button
+                onClick={openPackSheet}
+                style={{
+                  background: 'none', border: 'none',
+                  boxShadow: 'inset 0 0 0 1px var(--line2)',
+                  borderRadius: 999, padding: '5px 13px',
+                  fontFamily: 'inherit', fontWeight: 700, fontSize: 12,
+                  letterSpacing: '0.06em', textTransform: 'uppercase',
+                  color: 'var(--muted)', cursor: 'pointer',
+                  WebkitTapHighlightColor: 'transparent',
+                }}
+              >
+                Edit
+              </button>
+            </div>
+
+            {/* Clue Rounds */}
+            <div style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              paddingBottom: 12, marginBottom: 12, borderBottom: '1px solid var(--border)',
+            }}>
+              <div>
+                <div style={{
+                  fontFamily: 'Nunito, sans-serif', fontWeight: 700, fontSize: 10.5,
+                  letterSpacing: 1, color: 'var(--faint)', marginBottom: 2,
+                }}>
+                  CLUE ROUNDS
+                </div>
+                <div style={{
+                  fontFamily: 'var(--display-font)', fontWeight: 600,
+                  fontSize: 15, color: 'var(--text)',
+                }}>
+                  {view.totalClueRounds ?? 1} {(view.totalClueRounds ?? 1) === 1 ? 'clue round' : 'clue rounds'}
+                </div>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                <button
+                  onClick={() => emitRounds(parseInt(roundsVal) - 1)}
+                  disabled={parseInt(roundsVal) <= 1}
+                  style={stepBtnStyle(parseInt(roundsVal) <= 1)}
+                >
+                  −
+                </button>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  value={roundsVal}
+                  onChange={e => {
+                    const raw = e.target.value.replace(/[^0-9]/g, '');
+                    setRoundsVal(raw);
+                    const n = parseInt(raw);
+                    if (!isNaN(n) && n >= 1 && n <= 3) {
+                      socket.emit('room:set-rounds', { rounds: n });
+                    }
+                  }}
+                  onBlur={() => {
+                    const n = parseInt(roundsVal);
+                    emitRounds(isNaN(n) ? 3 : n);
+                  }}
+                  style={{
+                    width: 42, textAlign: 'center', border: '1px solid var(--border)',
+                    borderRadius: 10, background: 'var(--surface2)',
+                    fontFamily: 'var(--display-font)', fontWeight: 700, fontSize: 17,
+                    color: 'var(--text)', padding: '4px 0', outline: 'none',
+                  }}
+                />
+                <button
+                  onClick={() => emitRounds(parseInt(roundsVal) + 1)}
+                  disabled={parseInt(roundsVal) >= 3}
+                  style={stepBtnStyle(parseInt(roundsVal) >= 3)}
+                >
+                  +
+                </button>
+              </div>
+            </div>
+
+            {/* Discussion Time */}
+            <div style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              paddingBottom: 12, marginBottom: 12, borderBottom: '1px solid var(--border)',
+            }}>
+              <div>
+                <div style={{
+                  fontFamily: 'Nunito, sans-serif', fontWeight: 700, fontSize: 10.5,
+                  letterSpacing: 1, color: 'var(--faint)', marginBottom: 2,
+                }}>
+                  DISCUSS TIME
+                </div>
+                <div style={{
+                  fontFamily: 'var(--display-font)', fontWeight: 600,
+                  fontSize: 15, color: 'var(--text)',
+                }}>
+                  {view.discussionTime ?? 60}s
+                </div>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                <button
+                  onClick={() => emitDiscussion(parseInt(discussVal) - 10)}
+                  disabled={parseInt(discussVal) <= 10}
+                  style={stepBtnStyle(parseInt(discussVal) <= 10)}
+                >
+                  −
+                </button>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  value={discussVal}
+                  onChange={e => {
+                    const raw = e.target.value.replace(/[^0-9]/g, '');
+                    setDiscussVal(raw);
+                    const n = parseInt(raw);
+                    if (!isNaN(n) && n >= 10 && n <= 300) {
+                      socket.emit('room:set-discussion-time', { seconds: n });
+                    }
+                  }}
+                  onBlur={() => {
+                    const n = parseInt(discussVal);
+                    emitDiscussion(isNaN(n) ? 60 : n);
+                  }}
+                  style={{
+                    width: 48, textAlign: 'center', border: '1px solid var(--border)',
+                    borderRadius: 10, background: 'var(--surface2)',
+                    fontFamily: 'var(--display-font)', fontWeight: 700, fontSize: 17,
+                    color: 'var(--text)', padding: '4px 0', outline: 'none',
+                  }}
+                />
+                <button
+                  onClick={() => emitDiscussion(parseInt(discussVal) + 10)}
+                  disabled={parseInt(discussVal) >= 300}
+                  style={stepBtnStyle(parseInt(discussVal) >= 300)}
+                >
+                  +
+                </button>
+              </div>
+            </div>
+
+            {/* Auto-accept toggle */}
+            <div style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              paddingBottom: 12,
+            }}>
               <span style={{
-                position: 'absolute', inset: 0, borderRadius: 27,
-                background: view.autoAccept ? 'var(--accent)' : 'var(--border)',
-                transition: 'background .15s',
-              }} />
-              <span style={{
-                position: 'absolute', top: 3,
-                left: view.autoAccept ? 'calc(100% - 24px)' : 3,
-                width: 21, height: 21, borderRadius: '50%', background: '#fff',
-                transition: 'left .15s', boxShadow: '0 1px 4px rgba(0,0,0,0.25)',
-              }} />
-            </label>
+                fontFamily: 'Nunito, sans-serif', fontWeight: 700,
+                fontSize: 14, color: 'var(--muted)',
+              }}>
+                Auto-join next game
+              </span>
+              <label style={{ position: 'relative', display: 'inline-block', width: 48, height: 27, cursor: 'pointer', flexShrink: 0 }}>
+                <input
+                  type="checkbox"
+                  checked={!!view.autoAccept}
+                  onChange={e => socket.emit('room:set-auto-accept', { value: e.target.checked })}
+                  style={{ opacity: 0, width: 0, height: 0, position: 'absolute' }}
+                />
+                <span style={{
+                  position: 'absolute', inset: 0, borderRadius: 27,
+                  background: view.autoAccept ? 'var(--accent)' : 'var(--border)',
+                  transition: 'background .15s',
+                }} />
+                <span style={{
+                  position: 'absolute', top: 3,
+                  left: view.autoAccept ? 'calc(100% - 24px)' : 3,
+                  width: 21, height: 21, borderRadius: '50%', background: '#fff',
+                  transition: 'left .15s', boxShadow: '0 1px 4px rgba(0,0,0,0.25)',
+                }} />
+              </label>
+            </div>
           </div>
         )}
+
+      </div>{/* end scrollable middle */}
+
+      {/* Footer: start button pinned at bottom */}
+      <div style={{ paddingTop: 16 }}>
         {view.you.isHost ? (
           <>
             <Btn
@@ -490,6 +482,7 @@ export default function Lobby({ view, onLeave }) {
           </p>
         )}
       </div>
+
       {/* Pack picker bottom sheet */}
       {packOpen && (
         <>
