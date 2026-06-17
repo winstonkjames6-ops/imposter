@@ -45,10 +45,159 @@ function sanitizeCharacter(char) {
 }
 
 const WORD_PACKS = [
-  { category: "Food", words: ["Hot dog", "Sushi", "Mambo sauce", "Pancakes", "Tacos"] },
-  { category: "Sports", words: ["Volleyball", "Bowling", "Track", "Boxing", "Golf"] },
-  { category: "Places", words: ["Airport", "Library", "Barbershop", "Beach", "Rooftop"] },
+  {
+    category: "Food",
+    words: [
+      { word: "Hot dog", clues: ["vendor", "ballpark", "bun", "ketchup", "baseball"] },
+      { word: "Sushi", clues: ["rice", "raw", "chopsticks", "Japan", "rolls"] },
+      { word: "Mambo sauce", clues: ["DC", "wings", "orange", "spicy", "condiment"] },
+      { word: "Pancakes", clues: ["maple", "breakfast", "syrup", "fluffy", "griddle"] },
+      { word: "Tacos", clues: ["shell", "Mexico", "Tuesday", "filling", "street"] },
+      { word: "Pizza", clues: ["crust", "cheese", "oven", "slice", "delivery"] },
+      { word: "Burger", clues: ["patty", "bun", "grill", "fast food", "sesame"] },
+      { word: "Pasta", clues: ["noodles", "Italian", "sauce", "fork", "carbs"] },
+      { word: "Chicken wings", clues: ["Buffalo", "sauce", "spicy", "drumstick", "sports bar"] },
+      { word: "Donut", clues: ["glazed", "hole", "sprinkles", "coffee", "sweet"] },
+      { word: "Spaghetti", clues: ["noodles", "meatballs", "twirl", "Italian", "Alfredo"] },
+      { word: "Waffle", clues: ["syrup", "grid", "breakfast", "Belgian", "crispy"] },
+      { word: "Steak", clues: ["rare", "grill", "meat", "expensive", "fork and knife"] },
+      { word: "Soda", clues: ["fizzy", "sugar", "can", "pop", "Coke"] },
+      { word: "Sandwich", clues: ["bread", "lunch", "filling", "deli", "two slices"] },
+      { word: "Taco Bell", clues: ["fast food", "Mexico", "bell", "quesadilla", "purple"] },
+      { word: "Candy", clues: ["sugar", "sweet", "wrapper", "Halloween", "chocolate"] },
+      { word: "Ice cream", clues: ["cone", "melting", "cold", "flavor", "dairy"] },
+      { word: "Cheese", clues: ["dairy", "sharp", "wheel", "cheddar", "mousetrap"] },
+      { word: "Bacon", clues: ["crispy", "pork", "breakfast", "strip", "smoky"] }
+    ]
+  },
+  {
+    category: "Sports",
+    words: [
+      { word: "Volleyball", clues: ["net", "spike", "sand", "bump", "court"] },
+      { word: "Bowling", clues: ["pins", "strike", "lane", "ball", "shoes"] },
+      { word: "Track", clues: ["running", "field", "sprint", "relay", "finish line"] },
+      { word: "Boxing", clues: ["gloves", "ring", "punch", "knockout", "rounds"] },
+      { word: "Golf", clues: ["ball", "hole", "club", "green", "fairway"] },
+      { word: "Basketball", clues: ["hoop", "dunk", "court", "bounce", "slam"] },
+      { word: "Soccer", clues: ["goal", "field", "kick", "net", "World Cup"] },
+      { word: "Tennis", clues: ["racket", "court", "love", "deuce", "serve"] },
+      { word: "Football", clues: ["touchdown", "field", "quarterback", "tackle", "Super Bowl"] },
+      { word: "Baseball", clues: ["bat", "glove", "diamond", "pitch", "home run"] },
+      { word: "Skateboarding", clues: ["trick", "board", "wheels", "ramp", "kickflip"] },
+      { word: "Swimming", clues: ["pool", "stroke", "lap", "goggles", "water"] },
+      { word: "Gymnastics", clues: ["flip", "bars", "beam", "tumble", "flexibility"] },
+      { word: "Surfing", clues: ["wave", "board", "ocean", "beach", "wipeout"] },
+      { word: "Martial arts", clues: ["belt", "karate", "kick", "dojo", "discipline"] },
+      { word: "Ice skating", clues: ["blade", "ice", "spin", "rink", "elegant"] },
+      { word: "Cycling", clues: ["pedal", "chain", "bike", "gear", "helmet"] },
+      { word: "Archery", clues: ["arrow", "bow", "target", "bullseye", "aim"] },
+      { word: "Hiking", clues: ["trail", "mountain", "boots", "nature", "summit"] },
+      { word: "Weightlifting", clues: ["dumbbell", "muscle", "gym", "bench", "strength"] }
+    ]
+  },
+  {
+    category: "Places",
+    words: [
+      { word: "Airport", clues: ["runway", "departure", "luggage", "terminal", "security"] },
+      { word: "Library", clues: ["books", "quiet", "shelf", "card", "read"] },
+      { word: "Barbershop", clues: ["haircut", "razor", "pole", "chair", "trim"] },
+      { word: "Beach", clues: ["sand", "ocean", "wave", "sunburn", "boardwalk"] },
+      { word: "Restaurant", clues: ["menu", "waiter", "table", "food", "reservation"] },
+      { word: "Hospital", clues: ["doctor", "patient", "nurse", "surgery", "emergency"] },
+      { word: "School", clues: ["teacher", "classroom", "homework", "bell", "students"] },
+      { word: "Park", clues: ["grass", "playground", "bench", "trees", "picnic"] },
+      { word: "Movie theater", clues: ["popcorn", "screen", "ticket", "dark", "film"] },
+      { word: "Gym", clues: ["weights", "treadmill", "sweat", "membership", "fitness"] },
+      { word: "Mall", clues: ["store", "shopping", "corridor", "food court", "clothing"] },
+      { word: "Casino", clues: ["slots", "poker", "chips", "dealer", "gamble"] },
+      { word: "Bank", clues: ["money", "account", "teller", "safe", "vault"] },
+      { word: "Zoo", clues: ["animals", "cage", "ticket", "visitor", "enclosure"] },
+      { word: "Museum", clues: ["art", "exhibit", "artifact", "history", "tour"] },
+      { word: "Amusement park", clues: ["roller coaster", "thrills", "rides", "ticket", "fun"] },
+      { word: "Office", clues: ["desk", "cubicle", "boss", "computer", "fluorescent"] },
+      { word: "Gas station", clues: ["pump", "fuel", "convenience store", "attendant", "car"] },
+      { word: "Pharmacy", clues: ["medicine", "prescription", "pills", "counter", "drugstore"] },
+      { word: "Garden", clues: ["plants", "flowers", "soil", "seeds", "grow"] }
+    ]
+  },
+  {
+    category: "Animals",
+    words: [
+      { word: "Elephant", clues: ["trunk", "tusks", "gray", "large", "Africa"] },
+      { word: "Penguin", clues: ["ice", "flightless", "tuxedo", "Antarctica", "waddle"] },
+      { word: "Dolphin", clues: ["intelligent", "ocean", "click", "mammal", "playful"] },
+      { word: "Platypus", clues: ["venomous", "duck bill", "Australia", "egg-laying", "strange"] },
+      { word: "Lion", clues: ["mane", "roar", "Africa", "king", "pride"] },
+      { word: "Giraffe", clues: ["long neck", "spots", "Africa", "tall", "leaves"] },
+      { word: "Shark", clues: ["teeth", "ocean", "fins", "predator", "Jaws"] },
+      { word: "Eagle", clues: ["wings", "talons", "bald", "majestic", "soars"] },
+      { word: "Turtle", clues: ["shell", "slow", "water", "reptile", "ancient"] },
+      { word: "Octopus", clues: ["tentacles", "intelligent", "ocean", "camouflage", "suction cups"] },
+      { word: "Cheetah", clues: ["spots", "speed", "Africa", "cat", "hunt"] },
+      { word: "Koala", clues: ["eucalyptus", "Australia", "cute", "marsupial", "fuzzy"] },
+      { word: "Kangaroo", clues: ["pouch", "hopping", "Australia", "tail", "joey"] },
+      { word: "Peacock", clues: ["feathers", "tail", "pride", "colorful", "bird"] },
+      { word: "Wolf", clues: ["pack", "howl", "gray", "predator", "wild"] },
+      { word: "Butterfly", clues: ["wings", "metamorphosis", "colorful", "insect", "flower"] },
+      { word: "Bee", clues: ["honey", "sting", "hive", "pollinate", "buzz"] },
+      { word: "Crocodile", clues: ["teeth", "water", "scales", "prehistoric", "tail"] },
+      { word: "Owl", clues: ["night", "hooting", "eyes", "wise", "nocturnal"] },
+      { word: "Rabbit", clues: ["ears", "hop", "fluffy", "carrot", "burrow"] }
+    ]
+  },
+  {
+    category: "Technology",
+    words: [
+      { word: "Smartphone", clues: ["screen", "apps", "wireless", "pocket", "internet"] },
+      { word: "Cryptocurrency", clues: ["Bitcoin", "digital", "blockchain", "mining", "wallet"] },
+      { word: "Chatbot", clues: ["AI", "conversation", "text", "automated", "response"] },
+      { word: "Algorithm", clues: ["code", "logic", "computation", "step-by-step", "solve"] },
+      { word: "Cloud storage", clues: ["internet", "data", "backup", "access", "server"] },
+      { word: "Virtual reality", clues: ["headset", "immersive", "simulation", "goggles", "digital world"] },
+      { word: "Artificial intelligence", clues: ["machine learning", "smart", "robot", "computer", "neural"] },
+      { word: "Wifi", clues: ["internet", "wireless", "router", "connection", "signal"] },
+      { word: "Drone", clues: ["flying", "camera", "unmanned", "remote control", "aerial"] },
+      { word: "Laptop", clues: ["portable", "computer", "keyboard", "screen", "work"] },
+      { word: "Printer", clues: ["paper", "ink", "document", "copy", "print"] },
+      { word: "Router", clues: ["wifi", "connection", "network", "blinking lights", "modem"] },
+      { word: "Server", clues: ["data", "website", "hosting", "computer", "request"] },
+      { word: "USB", clues: ["plug", "data transfer", "stick", "port", "connection"] },
+      { word: "Monitor", clues: ["screen", "display", "computer", "eyes", "refresh rate"] },
+      { word: "Keyboard", clues: ["keys", "type", "input", "letters", "QWERTY"] },
+      { word: "Mouse", clues: ["click", "pad", "pointer", "wireless", "cursor"] },
+      { word: "Headphones", clues: ["ears", "sound", "music", "wire", "audio"] },
+      { word: "Battery", clues: ["power", "charge", "acid", "portable", "drain"] },
+      { word: "Website", clues: ["internet", "browser", "domain", "page", "HTML"] }
+    ]
+  },
+  {
+    category: "Occupations",
+    words: [
+      { word: "Chef", clues: ["cook", "kitchen", "food", "recipe", "restaurant"] },
+      { word: "Detective", clues: ["investigate", "clues", "suspect", "crime", "solve"] },
+      { word: "Astronaut", clues: ["space", "rocket", "moon", "suit", "weightless"] },
+      { word: "Barista", clues: ["coffee", "espresso", "cafe", "latte", "barista"] },
+      { word: "Plumber", clues: ["pipes", "water", "wrench", "drain", "leak"] },
+      { word: "Firefighter", clues: ["fire", "truck", "hose", "helmet", "rescue"] },
+      { word: "Nurse", clues: ["hospital", "patient", "care", "injection", "scrubs"] },
+      { word: "Carpenter", clues: ["wood", "nails", "hammer", "build", "furniture"] },
+      { word: "Surgeon", clues: ["scalpel", "hospital", "operation", "patient", "theater"] },
+      { word: "Lawyer", clues: ["court", "case", "law", "defendant", "judge"] },
+      { word: "Teacher", clues: ["classroom", "student", "grade", "lesson", "apple"] },
+      { word: "Electrician", clues: ["wires", "electricity", "circuit", "breaker", "outlet"] },
+      { word: "Pilot", clues: ["airplane", "cockpit", "flight", "landing", "wings"] },
+      { word: "Artist", clues: ["paint", "canvas", "brush", "creative", "gallery"] },
+      { word: "Photographer", clues: ["camera", "photo", "lens", "light", "shutter"] },
+      { word: "Accountant", clues: ["math", "taxes", "numbers", "spreadsheet", "audit"] },
+      { word: "Veterinarian", clues: ["animals", "pets", "clinic", "injection", "care"] },
+      { word: "Security guard", clues: ["patrol", "watch", "uniform", "badge", "protect"] },
+      { word: "Hairdresser", clues: ["salon", "scissors", "hair", "cut", "style"] },
+      { word: "Mechanic", clues: ["car", "engine", "tools", "grease", "repair"] }
+    ]
+  }
 ];
+
+module.exports = WORD_PACKS;
 
 function makeRoomCode() {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
@@ -179,8 +328,8 @@ function buildView(room, player) {
             word: room.secret.word,
           }
         : room.secret.imposterToken === player.token
-        ? { isImposter: true, category: room.secret.category, word: null }
-        : { isImposter: false, category: room.secret.category, word: room.secret.word },
+        ? { isImposter: true, category: room.secret.category, word: null, clues: room.secret.clues || [] }
+        : { isImposter: false, category: room.secret.category, word: room.secret.word, clues: [] },
 
     clueData,
     voteResults,
@@ -338,24 +487,30 @@ io.on("connection", (socket) => {
     if (room.players.size < 3)
       return callback({ ok: false, error: "Need at least 3 players." });
 
-    let category, word;
+    let category, word, clues = [];
     if (room.packConfig?.type === 'builtin') {
       const pack = WORD_PACKS.find(p => p.category === room.packConfig.category)
                 ?? WORD_PACKS[Math.floor(Math.random() * WORD_PACKS.length)];
       category = pack.category;
-      word = pack.words[Math.floor(Math.random() * pack.words.length)];
+      const picked = pack.words[Math.floor(Math.random() * pack.words.length)];
+      word = typeof picked === 'object' ? picked.word : picked;
+      clues = typeof picked === 'object' ? (picked.clues || []) : [];
     } else if (room.packConfig?.type === 'custom') {
       category = 'Custom';
-      word = room.packConfig.words[Math.floor(Math.random() * room.packConfig.words.length)];
+      const picked = room.packConfig.words[Math.floor(Math.random() * room.packConfig.words.length)];
+      word = typeof picked === 'object' ? picked.word : picked;
+      clues = typeof picked === 'object' ? (picked.clues || []) : [];
     } else {
       const pack = WORD_PACKS[Math.floor(Math.random() * WORD_PACKS.length)];
       category = pack.category;
-      word = pack.words[Math.floor(Math.random() * pack.words.length)];
+      const picked = pack.words[Math.floor(Math.random() * pack.words.length)];
+      word = typeof picked === 'object' ? picked.word : picked;
+      clues = typeof picked === 'object' ? (picked.clues || []) : [];
     }
     const activeTokens = [...room.players.values()].filter(p => !p.spectator).map(p => p.token);
     const imposterToken = activeTokens[Math.floor(Math.random() * activeTokens.length)];
 
-    room.secret = { word, category, imposterToken };
+    room.secret = { word, clues, category, imposterToken };
     room.phase = "reveal";
 
     callback({ ok: true });
