@@ -17,7 +17,7 @@ import { randomUUID } from "crypto";
 
 const httpServer = createServer();
 const io = new Server(httpServer, {
-  cors: { origin: "*" }, // fine for local dev; lock down before deploying
+  cors: { origin: ['http://localhost:5173', 'https://imposter-silk-three.vercel.app'] },
 });
 
 // ------------------------------------------------------------
