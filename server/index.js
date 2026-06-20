@@ -197,7 +197,7 @@ const WORD_PACKS = [
   }
 ];
 
-module.exports = WORD_PACKS;
+export default WORD_PACKS;
 
 function makeRoomCode() {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
