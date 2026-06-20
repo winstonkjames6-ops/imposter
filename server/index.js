@@ -228,6 +228,7 @@ function createRoom() {
     discussionDuration: 60000, // ms; configurable via room:set-discussion-time
     lastActivity: Date.now(),
     lastChanceResult: null, // 'escaped' | 'failed' | null
+    previousImposterToken: null,
   };
   rooms.set(room.code, room);
   return room;
@@ -507,10 +508,15 @@ io.on("connection", (socket) => {
       word = typeof picked === 'object' ? picked.word : picked;
       clues = typeof picked === 'object' ? (picked.clues || []) : [];
     }
-    const activeTokens = [...room.players.values()].filter(p => !p.spectator).map(p => p.token);
-    const imposterToken = activeTokens[Math.floor(Math.random() * activeTokens.length)];
+    const activeTokens = [...room.players.values()]
+      .filter(p => !p.spectator && p.token !== room.previousImposterToken)
+      .map(p => p.token);
+    const imposterToken = activeTokens.length > 0
+      ? activeTokens[Math.floor(Math.random() * activeTokens.length)]
+      : [...room.players.values()].filter(p => !p.spectator).map(p => p.token)[0];
 
     room.secret = { word, clues, category, imposterToken };
+    room.previousImposterToken = imposterToken;
     room.phase = "reveal";
 
     callback({ ok: true });
