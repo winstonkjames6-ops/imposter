@@ -123,6 +123,15 @@ export default function Reveal({ view, onLeave }) {
                 }}>
                   You don't know the word.<br />Blend in. Bluff your clues.
                 </div>
+                {clue && (
+                  <div style={{
+                    fontFamily: 'Nunito, sans-serif', fontWeight: 700,
+                    fontSize: 13, color: 'var(--text)', lineHeight: 1.4,
+                    marginTop: 6, textAlign: 'center',
+                  }}>
+                    Your clue: {clue}
+                  </div>
+                )}
               </div>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
@@ -179,16 +188,6 @@ export default function Reveal({ view, onLeave }) {
           )}
         </div>}
 
-        {held && !isSpectator && role?.isImposter && clue && (
-          <div style={{
-            background: 'var(--surface)', border: '1px solid var(--line)',
-            borderRadius: 14, padding: '12px 22px',
-            fontFamily: 'Nunito, sans-serif', fontWeight: 700, fontSize: 16,
-            color: 'var(--ink)', textAlign: 'center',
-          }}>
-            {clue}
-          </div>
-        )}
       </div>
 
       {/* Footer action */}
