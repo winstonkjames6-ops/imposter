@@ -2,7 +2,7 @@
 // creating their own connections.
 import { io } from "socket.io-client";
 
-export const socket = io("https://imposter-production-800f.up.railway.app", {
+export const socket = io("imposter-production-2048.up.railway.app", {
   autoConnect: true,
 });
 
