@@ -33,6 +33,12 @@ export default function Reveal({ view, onLeave }) {
 
   useEffect(() => () => clearInterval(timerRef.current), []);
 
+  useEffect(() => {
+    if (role?.isImposter && role.clues?.length > 0) {
+      setClue(role.clues[Math.floor(Math.random() * role.clues.length)]);
+    }
+  }, []);
+
   const isSpectator = view.you.isSpectator;
   const accent = role ? (role.isImposter ? 'var(--red)' : 'var(--green)') : 'var(--accent)';
   const circum = 2 * Math.PI * 28;
@@ -173,34 +179,14 @@ export default function Reveal({ view, onLeave }) {
           )}
         </div>}
 
-        {held && !isSpectator && role?.isImposter && role.clues?.length > 0 && (
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, width: '100%' }}>
-            <button
-              onClick={() => {
-                const arr = role.clues;
-                setClue(arr[Math.floor(Math.random() * arr.length)]);
-              }}
-              style={{
-                background: 'none', border: 'none',
-                boxShadow: 'inset 0 0 0 1.5px var(--line2)',
-                borderRadius: 999, padding: '8px 22px',
-                fontFamily: 'inherit', fontWeight: 700, fontSize: 14,
-                color: 'var(--ink)', cursor: 'pointer',
-                WebkitTapHighlightColor: 'transparent',
-              }}
-            >
-              Get a clue
-            </button>
-            {clue && (
-              <div style={{
-                background: 'var(--surface)', border: '1px solid var(--line)',
-                borderRadius: 14, padding: '12px 22px',
-                fontFamily: 'Nunito, sans-serif', fontWeight: 700, fontSize: 16,
-                color: 'var(--ink)', textAlign: 'center',
-              }}>
-                {clue}
-              </div>
-            )}
+        {held && !isSpectator && role?.isImposter && clue && (
+          <div style={{
+            background: 'var(--surface)', border: '1px solid var(--line)',
+            borderRadius: 14, padding: '12px 22px',
+            fontFamily: 'Nunito, sans-serif', fontWeight: 700, fontSize: 16,
+            color: 'var(--ink)', textAlign: 'center',
+          }}>
+            {clue}
           </div>
         )}
       </div>
